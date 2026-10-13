@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Exploramos descubrimiento, intercambio y replicación entre peers. La prueba decisiva llega cuando el seeder abandona la red.">
+<meta name="color-scheme" content="dark">
+<title>Lab 16 · Pear, Hyperswarm y Hypercore | Web3 Labs</title>
+<link rel="stylesheet" href="style.css">
+<script type="module" src="script.js">
+</script>
+</head>
+<body class="lab-16">
+<a class="skip-link" href="#introduccion">Saltar al contenido</a>
+<header class="navbar">
+<a class="brand" href="../index.html">
+<span class="brand-accent">▸</span> PEER://LAB</a>
+<nav aria-label="Navegación del laboratorio">
+<a href="#desarrollo">Desarrollo</a>
+<a href="#interactivo">Explorar</a>
+<a href="#resultados">Resultados</a>
+<a href="README.md">README ↗</a>
+</nav>
+<span class="nav-code">L16 / S19</span>
+</header>
+<main>
+<header class="hero">
+<div class="hero-copy">
+<p class="eyebrow">LABORATORIO 16 <span>SESIÓN 19</span>
+</p>
+<h1>Sin centro.<br>
+<em>Con dependencias.</em>
+</h1>
+<p class="hero-description">Exploramos descubrimiento, intercambio y replicación entre peers. La prueba decisiva llega cuando el seeder abandona la red.</p>
+<div class="hero-meta">
+<span>Pear / Hyperswarm / Hypercore / DHT</span>
+<span>Informe académico interactivo</span>
+</div>
+<a class="hero-link" href="#interactivo">Iniciar el experimento P2P <span aria-hidden="true">↘</span>
+</a>
+</div>
+<div class="hero-art">
+<div class="terminal-art">
+<div class="terminal-title">
+<span>● ● ●</span>
+<span>topology.demo</span>
+</div>
+<pre>
+<span class="terminal-muted">$ modelo de red</span>
+
+  [ PEER A ] ────────── [ PEER B ]
+       ╲                    ╱
+        ╲      DHT         ╱
+         [ BOOTSTRAP / NODOS ]
+
+  topic   → descubrimiento
+  socket  → comunicación
+  core    → replicación
+
+<span class="terminal-bright"> &gt; conectividad ≠ disponibilidad</span>
+</pre>
+<span class="terminal-cursor" aria-hidden="true">
+</span>
+</div>
+</div>
+<div class="hero-footer">
+<span>DISCOVER · CONNECT · REPLICATE</span>
+<span>HTML · CSS · JavaScript</span>
+</div>
+</header>
+<div class="report-layout">
+<aside class="chapter-nav" aria-label="Índice del informe">
+<span>EN ESTE INFORME</span>
+<a href="#introduccion">01 / Contexto</a>
+<a href="#instrucciones">02 / Instrucciones</a>
+<a href="#objetivos">03 / Objetivos</a>
+<a href="#tecnologias">04 / Tecnologías</a>
+<a href="#desarrollo">05 / Desarrollo</a>
+<a href="#interactivo">06 / Interacción</a>
+<a href="#resultados">07 / Resultados</a>
+<a href="#analisis">08 / Análisis crítico</a>
+<a href="#rubrica">09 / Rúbrica</a>
+<a href="#conclusiones">10 / Conclusiones</a>
+<a href="#aprendizajes">11 / Aprendizajes</a>
+</aside>
+<div class="report">
+<section id="introduccion" class="report-section " aria-labelledby="introduccion-title">
+<div class="section-heading">
+<span class="section-index">introduccion</span>
+<h2 id="introduccion-title">Introducción</h2>
+</div>
+<p>La comunicación peer-to-peer distribuye funciones que una aplicación centralizada suele reunir en un servidor: descubrimiento de participantes, establecimiento de conexiones y conservación de datos. Analizamos cómo dos peers autorizados pueden encontrarse y compartir un archivo sin un servidor central de aplicación. La arquitectura conserva infraestructura de red y servicios de descubrimiento; eliminar el backend propio no elimina todas las dependencias.</p>
+<p>El experimento se centra en un archivo pequeño y una conversación de prueba. Presentamos código de referencia y un modelo interactivo por bloques; no afirmamos haber unido dos dispositivos a una red real. Esa separación permite estudiar la disponibilidad cuando desaparece el emisor inicial sin confundir una topología dibujada con una conexión verificada.</p>
+</section>
+<section id="instrucciones" class="report-section instructions" aria-labelledby="instrucciones-title">
+<div class="section-heading">
+<span class="section-index">instrucciones</span>
+<h2 id="instrucciones-title">Instrucciones del laboratorio</h2>
+</div>
+<p>En este laboratorio trabajamos en Visual Studio Code para estudiar una arquitectura peer-to-peer del ecosistema Pear, Hyperswarm y Hypercore mediante un informe técnico y una simulación educativa independiente. Definimos un topic de demostración de treinta y dos bytes para explicar cómo dos peers se anuncian y buscan participantes mediante una DHT, sin atribuir una unión al topic real de clase cuando ese identificador no está disponible. Describimos la función de los nodos bootstrap, las condiciones de conectividad y el establecimiento de sockets entre participantes, y presentamos un intercambio de mensajes con delimitación explícita para evitar interpretar fragmentos de transporte como mensajes completos. Analizamos la creación de un Hypercore, su clave pública, la autenticación de bloques y la replicación de datos entre un escritor y sus lectores. Modelamos la transferencia de un archivo pequeño y desarrollamos el experimento kill-seeder, comparando la interrupción antes de completar la descarga con la presencia de una réplica íntegra en otro peer. Contrastamos centralización, disponibilidad y responsabilidad mediante los casos Napster, Grokster y BitTorrent, sin suponer que distribución técnica elimina obligaciones. Elaboramos P2P.md con arquitectura e infraestructura, señalamos la visibilidad de información de conexión y entregamos HTML, CSS, JavaScript y README con diagramas, terminal ilustrativa, resultados del modelo y conclusiones sobre descubrimiento, replicación y privacidad.</p>
+</section>
+<section id="objetivos" class="report-section " aria-labelledby="objetivos-title">
+<div class="section-heading">
+<span class="section-index">objetivos</span>
+<h2 id="objetivos-title">Objetivos</h2>
+</div>
+<div class="concept-grid">
+<article class="concept-card">
+<h3>Descomponer la arquitectura</h3>
+<p>Identificamos qué componente descubre peers, cuál establece transporte y cuál conserva un registro verificable. Evitamos tratar el ecosistema como una única tecnología.</p>
+</article>
+<article class="concept-card">
+<h3>Interpretar una interrupción</h3>
+<p>Seguimos bloques disponibles y faltantes para distinguir copia completa, caché parcial y peer conectado sin datos útiles.</p>
+</article>
+<article class="concept-card">
+<h3>Analizar responsabilidad</h3>
+<p>Comparamos infraestructura, control y observabilidad. Comprendemos que un protocolo distribuido no decide por sí mismo qué contenidos es legítimo compartir.</p>
+</article>
+</div>
+</section>
+<section id="tecnologias" class="report-section " aria-labelledby="tecnologias-title">
+<div class="section-heading">
+<span class="section-index">tecnologias</span>
+<h2 id="tecnologias-title">Tecnologías utilizadas</h2>
+</div>
+<div class="concept-grid">
+<article class="concept-card">
+<h3>Pear</h3>
+<p>Entorno para aplicaciones del ecosistema Holepunch. Proporciona herramientas de ejecución y distribución; no sustituye a los protocolos de descubrimiento ni a la lógica del archivo.</p>
+</article>
+<article class="concept-card">
+<h3>Hyperswarm</h3>
+<p>Descubre peers alrededor de un topic y establece conexiones. Utiliza infraestructura DHT; un topic sirve para agrupar participantes, no para autorizar lectores.</p>
+</article>
+<article class="concept-card">
+<h3>Hypercore</h3>
+<p>Registro append-only con datos autenticados. Su clave pública identifica el registro y permite verificar bloques; la capacidad de escribir y la disponibilidad son propiedades separadas.</p>
+</article>
+<article class="concept-card">
+<h3>DHT y bootstrap</h3>
+<p>La tabla distribuida permite localizar peers. Los bootstrap facilitan el primer contacto; NAT, firewalls y movilidad pueden afectar el establecimiento de conexiones.</p>
+</article>
+</div>
+</section>
+<section id="desarrollo" class="report-section " aria-labelledby="desarrollo-title">
+<div class="section-heading">
+<span class="section-index">desarrollo</span>
+<h2 id="desarrollo-title">Desarrollo del laboratorio</h2>
+</div>
+<article class="subsection">
+<h3>01 / Descubrimiento alrededor de un topic</h3>
+<p>Elegimos el texto público web3-lab16-demo y lo transformamos en un topic de treinta y dos bytes mediante SHA-256. Los participantes que acuerdan ese valor pueden anunciarse y buscar otros peers. En una sesión real utilizaríamos el topic proporcionado por la clase; aquí no lo inventamos ni afirmamos participar en él. El nombre compartido permite descubrimiento, pero no cifra por sí mismo el contenido ni concede permisos.</p>
+<figure class="diagram">
+<div class="flow">
+<div class="flow-node">
+<span class="node-index">01</span>
+<strong>Peer A</strong>
+<small>Anuncia un topic</small>
+</div>
+<span class="flow-arrow" aria-hidden="true">→</span>
+<div class="flow-node">
+<span class="node-index">02</span>
+<strong>Bootstrap / DHT</strong>
+<small>Encuentra candidatos</small>
+</div>
+<span class="flow-arrow" aria-hidden="true">→</span>
+<div class="flow-node">
+<span class="node-index">03</span>
+<strong>Peer B</strong>
+<small>Busca el mismo topic</small>
+</div>
+<span class="flow-arrow" aria-hidden="true">→</span>
+<div class="flow-node">
+<span class="node-index">04</span>
+<strong>Socket directo</strong>
+<small>Transporta datos</small>
+</div>
+</div>
+<figcaption>Infraestructura de descubrimiento y plano de datos.</figcaption>
+</figure>
+<p>Un nuevo peer necesita una forma inicial de contactar la red. Los nodos bootstrap cumplen esa función, pero no deben confundirse con un servidor que recibe cada mensaje de la aplicación. Una vez establecida la conexión, el intercambio puede ocurrir entre contrapartes. Las condiciones de NAT y políticas de red siguen importando; el éxito del descubrimiento no garantiza automáticamente un canal utilizable.</p>
+</article>
+<article class="subsection">
+<h3>02 / Intercambiar mensajes correctamente</h3>
+<p>El transporte entrega un flujo de bytes. Una lectura puede contener parte de un mensaje o varios mensajes juntos. Elegimos JSON terminado en salto de línea para fijar límites; el receptor acumula datos, extrae líneas completas y valida un tamaño máximo. Las aplicaciones de mayor alcance requieren autorización, control de errores y negociación de protocolo. El siguiente ejemplo delimita mensajes y no representa salida de una conexión real.</p>
+<figure class="code-block">
+<figcaption>
+<span>Dos peers con el mismo ejemplo · código de referencia</span>
+<span>JavaScript</span>
+</figcaption>
+<pre>
+<code data-language="JavaScript">import Hyperswarm from 'hyperswarm';
+import { createHash } from 'node:crypto';
+import { StringDecoder } from 'node:string_decoder';
+const swarm = new Hyperswarm();
+const topic = createHash('sha256').update('web3-lab16-demo').digest();
+swarm.on('connection', socket =&gt; {
+  let buffer = '';
+  const decoder = new StringDecoder('utf8');
+  socket.on('error', error =&gt; console.error(error.message));
+  socket.on('data', bytes =&gt; {
+    buffer += decoder.write(bytes);
+    if (buffer.length &gt; 65536) return socket.destroy();
+    let end;
+    while ((end = buffer.indexOf('\n')) &gt;= 0) {
+      const line = buffer.slice(0, end);
+      buffer = buffer.slice(end + 1);
+      try { console.log(JSON.parse(line)); }
+      catch { socket.destroy(); return; }
+    }
+  });
+  socket.write(JSON.stringify({ tipo: 'saludo', texto: 'Hola, peer' }) + '\n');
+});
+const discovery = swarm.join(topic, { server: true, client: true });
+await discovery.flushed();
+process.once('SIGINT', async () =&gt; { await swarm.destroy(); });</code>
+</pre>
+</figure>
+<p>El evento connection informa de un socket establecido. Para interpretar el experimento observaríamos saludo recibido en ambas terminales y errores de cierre. Un mensaje enviado no prueba recepción; una conexión abierta no prueba intercambio completo. Nuestro modelo visual muestra esos estados de forma separada y evita inventar direcciones, latencias o identidades reales.</p>
+</article>
+<article class="subsection">
+<h3>03 / Replicar un archivo con Hypercore</h3>
+<p>Un escritor crea un registro local y añade bloques. Un lector abre el registro con su clave pública, conoce el topic de descubrimiento y solicita los bloques necesarios. La clave pública de Hypercore permite identificar el registro y comprobar su estructura autenticada. No equivale a una contraseña de lectura ni debe confundirse con el topic arbitrario de una conversación.</p>
+<figure class="code-block">
+<figcaption>
+<span>Esquema de replicación · escritor de referencia</span>
+<span>JavaScript</span>
+</figcaption>
+<pre>
+<code data-language="JavaScript">import Hypercore from 'hypercore';
+import Hyperswarm from 'hyperswarm';
+import { readFile } from 'node:fs/promises';
+const core = new Hypercore('./datos-escritor');
+await core.ready();
+if (core.length === 0) {
+  await core.append(await readFile('./archivo-demo.txt'));
+}
+console.log('Clave pública del registro:', core.key.toString('hex'));
+const swarm = new Hyperswarm();
+swarm.on('connection', socket =&gt; core.replicate(socket));
+await swarm.join(core.discoveryKey, { server: true, client: true }).flushed();
+// Un lector abre Hypercore con core.key y une core.discoveryKey.
+// Su core.get(0) obtiene el bloque si hay un peer que lo sirva.</code>
+</pre>
+</figure>
+<p>La transferencia del archivo puede usar un bloque para un objeto pequeño o múltiples bloques para tamaños mayores. El receptor necesita verificar qué datos posee y conservarlos si actuará como seeder. Las APIs de descarga y replicación no significan que todos los lectores tengan todo el registro: una lectura selectiva puede dejar huecos. Para comparar disponibilidad examinamos la cobertura real de bloques, no solamente el número de participantes conectados.</p>
+</article>
+<article class="subsection">
+<h3>04 / Diseñar el experimento kill-seeder</h3>
+<p>Dividimos el objeto didáctico en cuatro bloques y empezamos con un único seeder completo. El receptor obtiene un bloque por avance manual. Si retiramos el seeder antes del cuarto bloque, la copia parcial no basta para recuperar los faltantes. El registro puede seguir siendo identificable y autenticable, pero el contenido no aparece espontáneamente en la DHT. Descubrimiento y almacenamiento responden preguntas diferentes.</p>
+<p>En el segundo escenario agregamos un peer con réplica completa. Cuando sale el seeder original, ese peer sirve los bloques restantes y el receptor termina. La conclusión depende de que la réplica esté íntegra, conectada y dispuesta a servir. Tener más peers sin bloques relevantes no produce la misma mejora. Si el receptor terminó antes de la salida, ya puede leer su copia local aunque nadie más esté disponible.</p>
+</article>
+<div class="table-scroll">
+<table>
+<caption>Arquitectura, conservación y responsabilidad</caption>
+<thead>
+<tr>
+<th scope="col">Modelo</th>
+<th scope="col">Infraestructura</th>
+<th scope="col">Disponibilidad</th>
+<th scope="col">Responsabilidad</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row">Centralizado</th>
+<td>Servidor e índice administrados</td>
+<td>Depende del operador y sus respaldos</td>
+<td>Control concentrado de datos y reglas</td>
+</tr>
+<tr>
+<th scope="row">Napster histórico</th>
+<td>Índice central; archivos entre usuarios</td>
+<td>Índice como punto de dependencia</td>
+<td>Centralización facilita intervención del operador</td>
+</tr>
+<tr>
+<th scope="row">Grokster histórico</th>
+<td>Distribución sin índice central equivalente</td>
+<td>Depende de peers y diseño de descubrimiento</td>
+<td>Inducir infracción puede generar responsabilidad</td>
+</tr>
+<tr>
+<th scope="row">BitTorrent</th>
+<td>Swarm; trackers o DHT según configuración</td>
+<td>Depende de piezas y seeders accesibles</td>
+<td>Protocolo y usos se analizan por separado</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="interactivo" class="report-section interactive-section" aria-labelledby="interactivo-title">
+<div class="section-heading">
+<span class="section-index">interactivo</span>
+<h2 id="interactivo-title">Experimento / kill-seeder</h2>
+</div>
+<p class="note">Modelo determinista en el navegador. Cada avance transfiere un bloque lógico; no abre sockets ni contacta la DHT.</p>
+<div class="p2p-experiment">
+<div class="topology">
+<div class="peer-node" id="seeder-node">
+<strong>A / SEEDER</strong>
+<span>4 bloques</span>
+</div>
+<div class="topology-center">
+<span>DHT</span>
+<small>Descubre peers<br>No conserva el archivo</small>
+</div>
+<div class="peer-node" id="receiver-node">
+<strong>B / RECEPTOR</strong>
+<span id="receiver-blocks">0 / 4 bloques</span>
+</div>
+<div class="peer-node replica" id="replica-node">
+<strong>C / RÉPLICA</strong>
+<span id="replica-state">No participa</span>
+</div>
+</div>
+<div class="experiment-controls">
+<button id="p2p-step">Descubrir peers</button>
+<button id="kill-seeder" disabled>Desconectar seeder</button>
+<button id="add-replica" aria-pressed="false">Añadir réplica completa</button>
+<button id="p2p-reset">Reiniciar</button>
+</div>
+<div class="blocks" aria-label="Progreso del archivo">
+<span>B1</span>
+<span>B2</span>
+<span>B3</span>
+<span>B4</span>
+</div>
+<progress id="file-progress" value="0" max="4" aria-label="Bloques recibidos">
+</progress>
+<pre class="terminal-log" id="p2p-log" aria-live="polite">MODELO / listo para descubrir peers.</pre>
+<p id="p2p-interpretation" aria-live="polite">El receptor necesita una fuente para cada bloque faltante.</p>
+</div>
+</section>
+<section id="resultados" class="report-section " aria-labelledby="resultados-title">
+<div class="section-heading">
+<span class="section-index">resultados</span>
+<h2 id="resultados-title">Resultados e interpretación</h2>
+</div>
+<p>El modelo produce dos resultados reproducibles. Con un solo seeder, la salida antes de completar cuatro bloques interrumpe la recuperación. Con una réplica completa activa, la salida del emisor inicial deja otra fuente y la transferencia continúa. El progreso indica bloques recibidos, no una velocidad medida ni un porcentaje observado en Hyperswarm real.</p>
+<p>El terminal visual representa descubrimiento, saludo, transferencia y cierre. Las API mostradas explican cómo materializar el experimento en dispositivos autorizados, pero no declaramos conexiones externas ni una unión al topic de clase. En P2P.md documentamos esa frontera y la relación entre descubrimiento, transporte, autenticación y conservación.</p>
+<figure class="diagram">
+<div class="flow">
+<div class="flow-node">
+<span class="node-index">01</span>
+<strong>Copia parcial</strong>
+<small>Faltan bloques</small>
+</div>
+<span class="flow-arrow" aria-hidden="true">→</span>
+<div class="flow-node">
+<span class="node-index">02</span>
+<strong>Otra réplica</strong>
+<small>Puede servir los faltantes</small>
+</div>
+<span class="flow-arrow" aria-hidden="true">→</span>
+<div class="flow-node">
+<span class="node-index">03</span>
+<strong>Copia completa</strong>
+<small>Lectura local posible</small>
+</div>
+<span class="flow-arrow" aria-hidden="true">→</span>
+<div class="flow-node">
+<span class="node-index">04</span>
+<strong>Sin fuente</strong>
+<small>Recuperación detenida</small>
+</div>
+</div>
+<figcaption>Estados del archivo después de retirar el emisor original.</figcaption>
+</figure>
+</section>
+<section id="analisis" class="report-section " aria-labelledby="analisis-title">
+<div class="section-heading">
+<span class="section-index">analisis</span>
+<h2 id="analisis-title">Análisis crítico</h2>
+</div>
+<article class="subsection">
+<h3>Disponibilidad y control</h3>
+<p>Distribuir datos puede reducir un punto único de falla, pero exige replicación intencional y participantes activos. La infraestructura tiene costos: espacio, ancho de banda, energía y mantenimiento. Un venture debe decidir quién conserva las réplicas, durante cuánto tiempo y qué ocurre cuando un dispositivo cambia de red. También necesita distinguir operación legítima del protocolo y responsabilidad por los contenidos distribuidos.</p>
+<p>Napster ilustra la separación entre archivos distribuidos e índice central. Grokster muestra que una arquitectura distribuida no elimina el análisis de conductas que inducen infracciones; la conclusión jurídica se atribuye al caso histórico, no a una garantía sobre cualquier software. BitTorrent aporta el modelo de piezas y seeders. Citamos <a href="https://cdn.ca9.uscourts.gov/datastore/opinions/2005/08/15/0355894o.pdf" target="_blank" rel="noopener">la resolución judicial de remisión del caso Grokster</a> y <a href="https://www.bittorrent.org/beps/bep_0003.html" target="_blank" rel="noopener">la especificación BEP 3</a> para estas referencias.</p>
+</article>
+<article class="subsection">
+<h3>P2P no implica anonimato</h3>
+<p>Los peers pueden conocer direcciones de conexión y otros metadatos de sus contrapartes, según el transporte y la ruta utilizada. Un topic público puede revelar pertenencia a una actividad. El cifrado del canal protege contenido en tránsito, pero no elimina observación de volumen, tiempos ni riesgo en endpoints. Por eso el ejercicio usa un archivo inocuo y participantes autorizados, sin atribuir privacidad a la ausencia de un servidor propio.</p>
+</article>
+</section>
+<section id="rubrica" class="report-section " aria-labelledby="rubrica-title">
+<div class="section-heading">
+<span class="section-index">rubrica</span>
+<h2 id="rubrica-title">Rúbrica de evaluación</h2>
+</div>
+<p class="note">Criterios y porcentajes originales proporcionados para este laboratorio. La columna de alcance describe lo presentado, sin asignar una calificación ni acreditar ejecuciones externas.</p>
+<div class="table-scroll">
+<table>
+<caption>Rúbrica académica original · laboratorio 16</caption>
+<thead>
+<tr>
+<th scope="col">Criterio</th>
+<th scope="col">Peso</th>
+<th scope="col">Alcance del trabajo presentado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row">Unión al topic de clase mediante Hyperswarm</th>
+<td>20%</td>
+<td>Ejemplo con topic de demostración; topic de clase no proporcionado y red no ejecutada.</td>
+</tr>
+<tr>
+<th scope="row">Intercambio de mensajes P2P entre dos peers</th>
+<td>25%</td>
+<td>Modelo interactivo y código de referencia; conexión externa no atribuida.</td>
+</tr>
+<tr>
+<th scope="row">Transferencia de archivo y análisis kill-seeder</th>
+<td>20%</td>
+<td>Simulación por bloques y comparación de disponibilidad.</td>
+</tr>
+<tr>
+<th scope="row">P2P.md con arquitectura, infraestructura y responsabilidad</th>
+<td>25%</td>
+<td>Documento independiente incluido.</td>
+</tr>
+<tr>
+<th scope="row">Comentarios de aprendizaje</th>
+<td>10%</td>
+<td>Interpretación de descubrimiento, replicación y dependencia.</td>
+</tr>
+</tbody>
+<tfoot>
+<tr>
+<th scope="row">Total</th>
+<td>100%</td>
+<td>Las simulaciones se identifican y no acreditan ejecuciones externas.</td>
+</tr>
+</tfoot>
+</table>
+</div>
+<p class="note">Restricciones aplicadas: participantes autorizados, archivo inocuo y distinción entre distribución técnica y anonimato. No se proporcionó texto adicional de penalizaciones; no asignamos deducciones ni sanciones inventadas.</p>
+</section>
+<section id="conclusiones" class="report-section " aria-labelledby="conclusiones-title">
+<div class="section-heading">
+<span class="section-index">conclusiones</span>
+<h2 id="conclusiones-title">Conclusiones</h2>
+</div>
+<ol class="conclusions">
+<li>La DHT ayuda a descubrir participantes; el socket comunica y Hypercore autentica datos. Comprender esa división permite localizar una falla sin atribuir a un componente una función que no cumple.</li>
+<li>La salida del seeder afecta los bloques que todavía faltan. La réplica completa mejora disponibilidad porque conserva contenido útil, no simplemente porque agrega un nombre a la topología.</li>
+<li>Una copia local completa permite lectura después de la desconexión, mientras que una copia parcial requiere una fuente adicional. Ese contraste vuelve observable el significado de persistencia distribuida.</li>
+<li>La arquitectura P2P conserva dependencias y responsabilidades. Bootstrap, conectividad y conservación deben planificarse, y la distribución no garantiza anonimato de los participantes.</li>
+</ol>
+</section>
+<section id="aprendizajes" class="report-section " aria-labelledby="aprendizajes-title">
+<div class="section-heading">
+<span class="section-index">aprendizajes</span>
+<h2 id="aprendizajes-title">Aprendizajes</h2>
+</div>
+<p>Aprendimos a separar descubrimiento, transporte y replicación, y a interpretar la disponibilidad a partir de bloques concretos. El modelo kill-seeder nos permitió comprender por qué la resiliencia depende de copias útiles y peers activos, y por qué una aplicación sin servidor central todavía necesita infraestructura y reglas de responsabilidad.</p>
+</section>
+<section id="documentacion" class="report-section " aria-labelledby="documentacion-title">
+<div class="section-heading">
+<span class="section-index">documentacion</span>
+<h2 id="documentacion-title">Documentación y fuentes</h2>
+</div>
+<a class="doc-link" href="README.md">Leer el README del laboratorio 16 ↗</a>
+<a class="doc-link" href="P2P.md">Consultar P2P.md ↗</a>
+<p>Las referencias fundamentan los protocolos y las declaraciones atribuidas. Los cálculos locales, modelos didácticos y límites de observación se explican junto a cada resultado.</p>
+<ul class="sources">
+<li>
+<a href="https://docs.pears.com/" target="_blank" rel="noopener noreferrer">Pear · documentación del ecosistema ↗</a>
+</li>
+<li>
+<a href="https://github.com/holepunchto/hyperswarm" target="_blank" rel="noopener noreferrer">Hyperswarm · API oficial ↗</a>
+</li>
+<li>
+<a href="https://github.com/holepunchto/hypercore" target="_blank" rel="noopener noreferrer">Hypercore · API oficial ↗</a>
+</li>
+<li>
+<a href="https://www.bittorrent.org/beps/bep_0003.html" target="_blank" rel="noopener noreferrer">BitTorrent · BEP 3 ↗</a>
+</li>
+<li>
+<a href="https://cdn.ca9.uscourts.gov/datastore/opinions/2005/08/15/0355894o.pdf" target="_blank" rel="noopener noreferrer">Grokster · resolución judicial histórica ↗</a>
+</li>
+</ul>
+</section>
+</div>
+</div>
+</main>
+<footer class="site-footer">
+<a href="../index.html">← Colección Web3 Labs</a>
+<p>Laboratorio 16 · Pear, Hyperswarm y Hypercore · Sesión 19</p>
+<a href="#">Volver al inicio ↑</a>
+</footer>
+</body>
+</html>
