@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: topic reproducible de 32 bytes; el texto distinto separa swarms
+ok 1 - topic reproducible de 32 bytes; el texto distinto separa swarms
+  ---
+  duration_ms: 1.3606
+  type: 'test'
+  ...
+# Subtest: manifest rechaza exceso de tamaño, inconsistencias y digest inválido
+ok 2 - manifest rechaza exceso de tamaño, inconsistencias y digest inválido
+  ---
+  duration_ms: 0.3674
+  type: 'test'
+  ...
+# Subtest: rutas de salida no pueden escapar del workspace
+ok 3 - rutas de salida no pueden escapar del workspace
+  ---
+  duration_ms: 0.2486
+  type: 'test'
+  ...
+# Subtest: muestra <=1 MB coincide byte a byte con el hash documentado
+ok 4 - muestra <=1 MB coincide byte a byte con el hash documentado
+  ---
+  duration_ms: 6.1243
+  type: 'test'
+  ...
+# Subtest: solo cuenta cotejos en otro run con el mismo topic y payload
+ok 5 - solo cuenta cotejos en otro run con el mismo topic y payload
+  ---
+  duration_ms: 0.6634
+  type: 'test'
+  ...
+# Subtest: markdown escapa HTML y elimina protocolos de enlace ejecutables
+ok 6 - markdown escapa HTML y elimina protocolos de enlace ejecutables
+  ---
+  duration_ms: 0.692
+  type: 'test'
+  ...
+# Subtest: índice y HTML concuerdan con los JSONL reales
+ok 7 - índice y HTML concuerdan con los JSONL reales
+  ---
+  duration_ms: 11.0668
+  type: 'test'
+  ...
+# Subtest: visor sirve HTML, assets y evidencia mediante HTTP local
+ok 8 - visor sirve HTML, assets y evidencia mediante HTTP local
+  ---
+  duration_ms: 147.9267
+  type: 'test'
+  ...
+# Subtest: visor bloquea keys, logs privados, node_modules y rutas de escape
+ok 9 - visor bloquea keys, logs privados, node_modules y rutas de escape
+  ---
+  duration_ms: 44.3007
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1281.8224

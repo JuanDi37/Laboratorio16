@@ -1,0 +1,24 @@
+{
+  "name": "cs031-lab16-p2p",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Lab 16: evidencia real de Hyperswarm y Hypercore",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "chat": "node src/cli.mjs chat",
+    "seed": "node src/cli.mjs seed",
+    "download": "node src/cli.mjs download",
+    "sample": "node scripts/sample.mjs",
+    "experiment": "node scripts/experiment.mjs",
+    "report": "node scripts/report.mjs",
+    "serve": "node scripts/serve.mjs",
+    "test": "node scripts/test-runner.mjs",
+    "check": "node scripts/check.mjs"
+  },
+  "dependencies": {
+    "hypercore": "^11.0.0",
+    "hyperdht": "^6.0.0",
+    "hyperswarm": "^4.0.0"
+  }
+}

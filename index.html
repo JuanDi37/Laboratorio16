@@ -1,496 +1,258 @@
 <!doctype html>
-<html lang="es">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="Exploramos descubrimiento, intercambio y replicación entre peers. La prueba decisiva llega cuando el seeder abandona la red.">
-<meta name="color-scheme" content="dark">
-<title>Lab 16 · Pear, Hyperswarm y Hypercore | Web3 Labs</title>
-<link rel="stylesheet" href="style.css">
-<script type="module" src="script.js">
-</script>
-</head>
-<body class="lab-16">
-<a class="skip-link" href="#introduccion">Saltar al contenido</a>
-<header class="navbar">
-<a class="brand" href="../index.html">
-<span class="brand-accent">▸</span> PEER://LAB</a>
-<nav aria-label="Navegación del laboratorio">
-<a href="#desarrollo">Desarrollo</a>
-<a href="#interactivo">Explorar</a>
-<a href="#resultados">Resultados</a>
-<a href="README.md">README ↗</a>
-</nav>
-<span class="nav-code">L16 / S19</span>
-</header>
-<main>
-<header class="hero">
-<div class="hero-copy">
-<p class="eyebrow">LABORATORIO 16 <span>SESIÓN 19</span>
-</p>
-<h1>Sin centro.<br>
-<em>Con dependencias.</em>
-</h1>
-<p class="hero-description">Exploramos descubrimiento, intercambio y replicación entre peers. La prueba decisiva llega cuando el seeder abandona la red.</p>
-<div class="hero-meta">
-<span>Pear / Hyperswarm / Hypercore / DHT</span>
-<span>Informe académico interactivo</span>
-</div>
-<a class="hero-link" href="#interactivo">Iniciar el experimento P2P <span aria-hidden="true">↘</span>
-</a>
-</div>
-<div class="hero-art">
-<div class="terminal-art">
-<div class="terminal-title">
-<span>● ● ●</span>
-<span>topology.demo</span>
-</div>
-<pre>
-<span class="terminal-muted">$ modelo de red</span>
-
-  [ PEER A ] ────────── [ PEER B ]
-       ╲                    ╱
-        ╲      DHT         ╱
-         [ BOOTSTRAP / NODOS ]
-
-  topic   → descubrimiento
-  socket  → comunicación
-  core    → replicación
-
-<span class="terminal-bright"> &gt; conectividad ≠ disponibilidad</span>
-</pre>
-<span class="terminal-cursor" aria-hidden="true">
-</span>
-</div>
-</div>
-<div class="hero-footer">
-<span>DISCOVER · CONNECT · REPLICATE</span>
-<span>HTML · CSS · JavaScript</span>
-</div>
-</header>
-<div class="report-layout">
-<aside class="chapter-nav" aria-label="Índice del informe">
-<span>EN ESTE INFORME</span>
-<a href="#introduccion">01 / Contexto</a>
-<a href="#instrucciones">02 / Instrucciones</a>
-<a href="#objetivos">03 / Objetivos</a>
-<a href="#tecnologias">04 / Tecnologías</a>
-<a href="#desarrollo">05 / Desarrollo</a>
-<a href="#interactivo">06 / Interacción</a>
-<a href="#resultados">07 / Resultados</a>
-<a href="#analisis">08 / Análisis crítico</a>
-<a href="#rubrica">09 / Rúbrica</a>
-<a href="#conclusiones">10 / Conclusiones</a>
-<a href="#aprendizajes">11 / Aprendizajes</a>
-</aside>
-<div class="report">
-<section id="introduccion" class="report-section " aria-labelledby="introduccion-title">
-<div class="section-heading">
-<span class="section-index">introduccion</span>
-<h2 id="introduccion-title">Introducción</h2>
-</div>
-<p>La comunicación peer-to-peer distribuye funciones que una aplicación centralizada suele reunir en un servidor: descubrimiento de participantes, establecimiento de conexiones y conservación de datos. Analizamos cómo dos peers autorizados pueden encontrarse y compartir un archivo sin un servidor central de aplicación. La arquitectura conserva infraestructura de red y servicios de descubrimiento; eliminar el backend propio no elimina todas las dependencias.</p>
-<p>El experimento se centra en un archivo pequeño y una conversación de prueba. Presentamos código de referencia y un modelo interactivo por bloques; no afirmamos haber unido dos dispositivos a una red real. Esa separación permite estudiar la disponibilidad cuando desaparece el emisor inicial sin confundir una topología dibujada con una conexión verificada.</p>
-</section>
-<section id="instrucciones" class="report-section instructions" aria-labelledby="instrucciones-title">
-<div class="section-heading">
-<span class="section-index">instrucciones</span>
-<h2 id="instrucciones-title">Instrucciones del laboratorio</h2>
-</div>
-<p>En este laboratorio trabajamos en Visual Studio Code para estudiar una arquitectura peer-to-peer del ecosistema Pear, Hyperswarm y Hypercore mediante un informe técnico y una simulación educativa independiente. Definimos un topic de demostración de treinta y dos bytes para explicar cómo dos peers se anuncian y buscan participantes mediante una DHT, sin atribuir una unión al topic real de clase cuando ese identificador no está disponible. Describimos la función de los nodos bootstrap, las condiciones de conectividad y el establecimiento de sockets entre participantes, y presentamos un intercambio de mensajes con delimitación explícita para evitar interpretar fragmentos de transporte como mensajes completos. Analizamos la creación de un Hypercore, su clave pública, la autenticación de bloques y la replicación de datos entre un escritor y sus lectores. Modelamos la transferencia de un archivo pequeño y desarrollamos el experimento kill-seeder, comparando la interrupción antes de completar la descarga con la presencia de una réplica íntegra en otro peer. Contrastamos centralización, disponibilidad y responsabilidad mediante los casos Napster, Grokster y BitTorrent, sin suponer que distribución técnica elimina obligaciones. Elaboramos P2P.md con arquitectura e infraestructura, señalamos la visibilidad de información de conexión y entregamos HTML, CSS, JavaScript y README con diagramas, terminal ilustrativa, resultados del modelo y conclusiones sobre descubrimiento, replicación y privacidad.</p>
-</section>
-<section id="objetivos" class="report-section " aria-labelledby="objetivos-title">
-<div class="section-heading">
-<span class="section-index">objetivos</span>
-<h2 id="objetivos-title">Objetivos</h2>
-</div>
-<div class="concept-grid">
-<article class="concept-card">
-<h3>Descomponer la arquitectura</h3>
-<p>Identificamos qué componente descubre peers, cuál establece transporte y cuál conserva un registro verificable. Evitamos tratar el ecosistema como una única tecnología.</p>
-</article>
-<article class="concept-card">
-<h3>Interpretar una interrupción</h3>
-<p>Seguimos bloques disponibles y faltantes para distinguir copia completa, caché parcial y peer conectado sin datos útiles.</p>
-</article>
-<article class="concept-card">
-<h3>Analizar responsabilidad</h3>
-<p>Comparamos infraestructura, control y observabilidad. Comprendemos que un protocolo distribuido no decide por sí mismo qué contenidos es legítimo compartir.</p>
-</article>
-</div>
-</section>
-<section id="tecnologias" class="report-section " aria-labelledby="tecnologias-title">
-<div class="section-heading">
-<span class="section-index">tecnologias</span>
-<h2 id="tecnologias-title">Tecnologías utilizadas</h2>
-</div>
-<div class="concept-grid">
-<article class="concept-card">
-<h3>Pear</h3>
-<p>Entorno para aplicaciones del ecosistema Holepunch. Proporciona herramientas de ejecución y distribución; no sustituye a los protocolos de descubrimiento ni a la lógica del archivo.</p>
-</article>
-<article class="concept-card">
-<h3>Hyperswarm</h3>
-<p>Descubre peers alrededor de un topic y establece conexiones. Utiliza infraestructura DHT; un topic sirve para agrupar participantes, no para autorizar lectores.</p>
-</article>
-<article class="concept-card">
-<h3>Hypercore</h3>
-<p>Registro append-only con datos autenticados. Su clave pública identifica el registro y permite verificar bloques; la capacidad de escribir y la disponibilidad son propiedades separadas.</p>
-</article>
-<article class="concept-card">
-<h3>DHT y bootstrap</h3>
-<p>La tabla distribuida permite localizar peers. Los bootstrap facilitan el primer contacto; NAT, firewalls y movilidad pueden afectar el establecimiento de conexiones.</p>
-</article>
-</div>
-</section>
-<section id="desarrollo" class="report-section " aria-labelledby="desarrollo-title">
-<div class="section-heading">
-<span class="section-index">desarrollo</span>
-<h2 id="desarrollo-title">Desarrollo del laboratorio</h2>
-</div>
-<article class="subsection">
-<h3>01 / Descubrimiento alrededor de un topic</h3>
-<p>Elegimos el texto público web3-lab16-demo y lo transformamos en un topic de treinta y dos bytes mediante SHA-256. Los participantes que acuerdan ese valor pueden anunciarse y buscar otros peers. En una sesión real utilizaríamos el topic proporcionado por la clase; aquí no lo inventamos ni afirmamos participar en él. El nombre compartido permite descubrimiento, pero no cifra por sí mismo el contenido ni concede permisos.</p>
-<figure class="diagram">
-<div class="flow">
-<div class="flow-node">
-<span class="node-index">01</span>
-<strong>Peer A</strong>
-<small>Anuncia un topic</small>
-</div>
-<span class="flow-arrow" aria-hidden="true">→</span>
-<div class="flow-node">
-<span class="node-index">02</span>
-<strong>Bootstrap / DHT</strong>
-<small>Encuentra candidatos</small>
-</div>
-<span class="flow-arrow" aria-hidden="true">→</span>
-<div class="flow-node">
-<span class="node-index">03</span>
-<strong>Peer B</strong>
-<small>Busca el mismo topic</small>
-</div>
-<span class="flow-arrow" aria-hidden="true">→</span>
-<div class="flow-node">
-<span class="node-index">04</span>
-<strong>Socket directo</strong>
-<small>Transporta datos</small>
-</div>
-</div>
-<figcaption>Infraestructura de descubrimiento y plano de datos.</figcaption>
-</figure>
-<p>Un nuevo peer necesita una forma inicial de contactar la red. Los nodos bootstrap cumplen esa función, pero no deben confundirse con un servidor que recibe cada mensaje de la aplicación. Una vez establecida la conexión, el intercambio puede ocurrir entre contrapartes. Las condiciones de NAT y políticas de red siguen importando; el éxito del descubrimiento no garantiza automáticamente un canal utilizable.</p>
-</article>
-<article class="subsection">
-<h3>02 / Intercambiar mensajes correctamente</h3>
-<p>El transporte entrega un flujo de bytes. Una lectura puede contener parte de un mensaje o varios mensajes juntos. Elegimos JSON terminado en salto de línea para fijar límites; el receptor acumula datos, extrae líneas completas y valida un tamaño máximo. Las aplicaciones de mayor alcance requieren autorización, control de errores y negociación de protocolo. El siguiente ejemplo delimita mensajes y no representa salida de una conexión real.</p>
-<figure class="code-block">
-<figcaption>
-<span>Dos peers con el mismo ejemplo · código de referencia</span>
-<span>JavaScript</span>
-</figcaption>
-<pre>
-<code data-language="JavaScript">import Hyperswarm from 'hyperswarm';
-import { createHash } from 'node:crypto';
-import { StringDecoder } from 'node:string_decoder';
-const swarm = new Hyperswarm();
-const topic = createHash('sha256').update('web3-lab16-demo').digest();
-swarm.on('connection', socket =&gt; {
-  let buffer = '';
-  const decoder = new StringDecoder('utf8');
-  socket.on('error', error =&gt; console.error(error.message));
-  socket.on('data', bytes =&gt; {
-    buffer += decoder.write(bytes);
-    if (buffer.length &gt; 65536) return socket.destroy();
-    let end;
-    while ((end = buffer.indexOf('\n')) &gt;= 0) {
-      const line = buffer.slice(0, end);
-      buffer = buffer.slice(end + 1);
-      try { console.log(JSON.parse(line)); }
-      catch { socket.destroy(); return; }
-    }
-  });
-  socket.write(JSON.stringify({ tipo: 'saludo', texto: 'Hola, peer' }) + '\n');
-});
-const discovery = swarm.join(topic, { server: true, client: true });
-await discovery.flushed();
-process.once('SIGINT', async () =&gt; { await swarm.destroy(); });</code>
-</pre>
-</figure>
-<p>El evento connection informa de un socket establecido. Para interpretar el experimento observaríamos saludo recibido en ambas terminales y errores de cierre. Un mensaje enviado no prueba recepción; una conexión abierta no prueba intercambio completo. Nuestro modelo visual muestra esos estados de forma separada y evita inventar direcciones, latencias o identidades reales.</p>
-</article>
-<article class="subsection">
-<h3>03 / Replicar un archivo con Hypercore</h3>
-<p>Un escritor crea un registro local y añade bloques. Un lector abre el registro con su clave pública, conoce el topic de descubrimiento y solicita los bloques necesarios. La clave pública de Hypercore permite identificar el registro y comprobar su estructura autenticada. No equivale a una contraseña de lectura ni debe confundirse con el topic arbitrario de una conversación.</p>
-<figure class="code-block">
-<figcaption>
-<span>Esquema de replicación · escritor de referencia</span>
-<span>JavaScript</span>
-</figcaption>
-<pre>
-<code data-language="JavaScript">import Hypercore from 'hypercore';
-import Hyperswarm from 'hyperswarm';
-import { readFile } from 'node:fs/promises';
-const core = new Hypercore('./datos-escritor');
-await core.ready();
-if (core.length === 0) {
-  await core.append(await readFile('./archivo-demo.txt'));
-}
-console.log('Clave pública del registro:', core.key.toString('hex'));
-const swarm = new Hyperswarm();
-swarm.on('connection', socket =&gt; core.replicate(socket));
-await swarm.join(core.discoveryKey, { server: true, client: true }).flushed();
-// Un lector abre Hypercore con core.key y une core.discoveryKey.
-// Su core.get(0) obtiene el bloque si hay un peer que lo sirva.</code>
-</pre>
-</figure>
-<p>La transferencia del archivo puede usar un bloque para un objeto pequeño o múltiples bloques para tamaños mayores. El receptor necesita verificar qué datos posee y conservarlos si actuará como seeder. Las APIs de descarga y replicación no significan que todos los lectores tengan todo el registro: una lectura selectiva puede dejar huecos. Para comparar disponibilidad examinamos la cobertura real de bloques, no solamente el número de participantes conectados.</p>
-</article>
-<article class="subsection">
-<h3>04 / Diseñar el experimento kill-seeder</h3>
-<p>Dividimos el objeto didáctico en cuatro bloques y empezamos con un único seeder completo. El receptor obtiene un bloque por avance manual. Si retiramos el seeder antes del cuarto bloque, la copia parcial no basta para recuperar los faltantes. El registro puede seguir siendo identificable y autenticable, pero el contenido no aparece espontáneamente en la DHT. Descubrimiento y almacenamiento responden preguntas diferentes.</p>
-<p>En el segundo escenario agregamos un peer con réplica completa. Cuando sale el seeder original, ese peer sirve los bloques restantes y el receptor termina. La conclusión depende de que la réplica esté íntegra, conectada y dispuesta a servir. Tener más peers sin bloques relevantes no produce la misma mejora. Si el receptor terminó antes de la salida, ya puede leer su copia local aunque nadie más esté disponible.</p>
-</article>
-<div class="table-scroll">
-<table>
-<caption>Arquitectura, conservación y responsabilidad</caption>
-<thead>
-<tr>
-<th scope="col">Modelo</th>
-<th scope="col">Infraestructura</th>
-<th scope="col">Disponibilidad</th>
-<th scope="col">Responsabilidad</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<th scope="row">Centralizado</th>
-<td>Servidor e índice administrados</td>
-<td>Depende del operador y sus respaldos</td>
-<td>Control concentrado de datos y reglas</td>
-</tr>
-<tr>
-<th scope="row">Napster histórico</th>
-<td>Índice central; archivos entre usuarios</td>
-<td>Índice como punto de dependencia</td>
-<td>Centralización facilita intervención del operador</td>
-</tr>
-<tr>
-<th scope="row">Grokster histórico</th>
-<td>Distribución sin índice central equivalente</td>
-<td>Depende de peers y diseño de descubrimiento</td>
-<td>Inducir infracción puede generar responsabilidad</td>
-</tr>
-<tr>
-<th scope="row">BitTorrent</th>
-<td>Swarm; trackers o DHT según configuración</td>
-<td>Depende de piezas y seeders accesibles</td>
-<td>Protocolo y usos se analizan por separado</td>
-</tr>
-</tbody>
-</table>
-</div>
-</section>
-<section id="interactivo" class="report-section interactive-section" aria-labelledby="interactivo-title">
-<div class="section-heading">
-<span class="section-index">interactivo</span>
-<h2 id="interactivo-title">Experimento / kill-seeder</h2>
-</div>
-<p class="note">Modelo determinista en el navegador. Cada avance transfiere un bloque lógico; no abre sockets ni contacta la DHT.</p>
-<div class="p2p-experiment">
-<div class="topology">
-<div class="peer-node" id="seeder-node">
-<strong>A / SEEDER</strong>
-<span>4 bloques</span>
-</div>
-<div class="topology-center">
-<span>DHT</span>
-<small>Descubre peers<br>No conserva el archivo</small>
-</div>
-<div class="peer-node" id="receiver-node">
-<strong>B / RECEPTOR</strong>
-<span id="receiver-blocks">0 / 4 bloques</span>
-</div>
-<div class="peer-node replica" id="replica-node">
-<strong>C / RÉPLICA</strong>
-<span id="replica-state">No participa</span>
-</div>
-</div>
-<div class="experiment-controls">
-<button id="p2p-step">Descubrir peers</button>
-<button id="kill-seeder" disabled>Desconectar seeder</button>
-<button id="add-replica" aria-pressed="false">Añadir réplica completa</button>
-<button id="p2p-reset">Reiniciar</button>
-</div>
-<div class="blocks" aria-label="Progreso del archivo">
-<span>B1</span>
-<span>B2</span>
-<span>B3</span>
-<span>B4</span>
-</div>
-<progress id="file-progress" value="0" max="4" aria-label="Bloques recibidos">
-</progress>
-<pre class="terminal-log" id="p2p-log" aria-live="polite">MODELO / listo para descubrir peers.</pre>
-<p id="p2p-interpretation" aria-live="polite">El receptor necesita una fuente para cada bloque faltante.</p>
-</div>
-</section>
-<section id="resultados" class="report-section " aria-labelledby="resultados-title">
-<div class="section-heading">
-<span class="section-index">resultados</span>
-<h2 id="resultados-title">Resultados e interpretación</h2>
-</div>
-<p>El modelo produce dos resultados reproducibles. Con un solo seeder, la salida antes de completar cuatro bloques interrumpe la recuperación. Con una réplica completa activa, la salida del emisor inicial deja otra fuente y la transferencia continúa. El progreso indica bloques recibidos, no una velocidad medida ni un porcentaje observado en Hyperswarm real.</p>
-<p>El terminal visual representa descubrimiento, saludo, transferencia y cierre. Las API mostradas explican cómo materializar el experimento en dispositivos autorizados, pero no declaramos conexiones externas ni una unión al topic de clase. En P2P.md documentamos esa frontera y la relación entre descubrimiento, transporte, autenticación y conservación.</p>
-<figure class="diagram">
-<div class="flow">
-<div class="flow-node">
-<span class="node-index">01</span>
-<strong>Copia parcial</strong>
-<small>Faltan bloques</small>
-</div>
-<span class="flow-arrow" aria-hidden="true">→</span>
-<div class="flow-node">
-<span class="node-index">02</span>
-<strong>Otra réplica</strong>
-<small>Puede servir los faltantes</small>
-</div>
-<span class="flow-arrow" aria-hidden="true">→</span>
-<div class="flow-node">
-<span class="node-index">03</span>
-<strong>Copia completa</strong>
-<small>Lectura local posible</small>
-</div>
-<span class="flow-arrow" aria-hidden="true">→</span>
-<div class="flow-node">
-<span class="node-index">04</span>
-<strong>Sin fuente</strong>
-<small>Recuperación detenida</small>
-</div>
-</div>
-<figcaption>Estados del archivo después de retirar el emisor original.</figcaption>
-</figure>
-</section>
-<section id="analisis" class="report-section " aria-labelledby="analisis-title">
-<div class="section-heading">
-<span class="section-index">analisis</span>
-<h2 id="analisis-title">Análisis crítico</h2>
-</div>
-<article class="subsection">
-<h3>Disponibilidad y control</h3>
-<p>Distribuir datos puede reducir un punto único de falla, pero exige replicación intencional y participantes activos. La infraestructura tiene costos: espacio, ancho de banda, energía y mantenimiento. Un venture debe decidir quién conserva las réplicas, durante cuánto tiempo y qué ocurre cuando un dispositivo cambia de red. También necesita distinguir operación legítima del protocolo y responsabilidad por los contenidos distribuidos.</p>
-<p>Napster ilustra la separación entre archivos distribuidos e índice central. Grokster muestra que una arquitectura distribuida no elimina el análisis de conductas que inducen infracciones; la conclusión jurídica se atribuye al caso histórico, no a una garantía sobre cualquier software. BitTorrent aporta el modelo de piezas y seeders. Citamos <a href="https://cdn.ca9.uscourts.gov/datastore/opinions/2005/08/15/0355894o.pdf" target="_blank" rel="noopener">la resolución judicial de remisión del caso Grokster</a> y <a href="https://www.bittorrent.org/beps/bep_0003.html" target="_blank" rel="noopener">la especificación BEP 3</a> para estas referencias.</p>
-</article>
-<article class="subsection">
-<h3>P2P no implica anonimato</h3>
-<p>Los peers pueden conocer direcciones de conexión y otros metadatos de sus contrapartes, según el transporte y la ruta utilizada. Un topic público puede revelar pertenencia a una actividad. El cifrado del canal protege contenido en tránsito, pero no elimina observación de volumen, tiempos ni riesgo en endpoints. Por eso el ejercicio usa un archivo inocuo y participantes autorizados, sin atribuir privacidad a la ausencia de un servidor propio.</p>
-</article>
-</section>
-<section id="rubrica" class="report-section " aria-labelledby="rubrica-title">
-<div class="section-heading">
-<span class="section-index">rubrica</span>
-<h2 id="rubrica-title">Rúbrica de evaluación</h2>
-</div>
-<p class="note">Criterios y porcentajes originales proporcionados para este laboratorio. La columna de alcance describe lo presentado, sin asignar una calificación ni acreditar ejecuciones externas.</p>
-<div class="table-scroll">
-<table>
-<caption>Rúbrica académica original · laboratorio 16</caption>
-<thead>
-<tr>
-<th scope="col">Criterio</th>
-<th scope="col">Peso</th>
-<th scope="col">Alcance del trabajo presentado</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<th scope="row">Unión al topic de clase mediante Hyperswarm</th>
-<td>20%</td>
-<td>Ejemplo con topic de demostración; topic de clase no proporcionado y red no ejecutada.</td>
-</tr>
-<tr>
-<th scope="row">Intercambio de mensajes P2P entre dos peers</th>
-<td>25%</td>
-<td>Modelo interactivo y código de referencia; conexión externa no atribuida.</td>
-</tr>
-<tr>
-<th scope="row">Transferencia de archivo y análisis kill-seeder</th>
-<td>20%</td>
-<td>Simulación por bloques y comparación de disponibilidad.</td>
-</tr>
-<tr>
-<th scope="row">P2P.md con arquitectura, infraestructura y responsabilidad</th>
-<td>25%</td>
-<td>Documento independiente incluido.</td>
-</tr>
-<tr>
-<th scope="row">Comentarios de aprendizaje</th>
-<td>10%</td>
-<td>Interpretación de descubrimiento, replicación y dependencia.</td>
-</tr>
-</tbody>
-<tfoot>
-<tr>
-<th scope="row">Total</th>
-<td>100%</td>
-<td>Las simulaciones se identifican y no acreditan ejecuciones externas.</td>
-</tr>
-</tfoot>
-</table>
-</div>
-<p class="note">Restricciones aplicadas: participantes autorizados, archivo inocuo y distinción entre distribución técnica y anonimato. No se proporcionó texto adicional de penalizaciones; no asignamos deducciones ni sanciones inventadas.</p>
-</section>
-<section id="conclusiones" class="report-section " aria-labelledby="conclusiones-title">
-<div class="section-heading">
-<span class="section-index">conclusiones</span>
-<h2 id="conclusiones-title">Conclusiones</h2>
-</div>
-<ol class="conclusions">
-<li>La DHT ayuda a descubrir participantes; el socket comunica y Hypercore autentica datos. Comprender esa división permite localizar una falla sin atribuir a un componente una función que no cumple.</li>
-<li>La salida del seeder afecta los bloques que todavía faltan. La réplica completa mejora disponibilidad porque conserva contenido útil, no simplemente porque agrega un nombre a la topología.</li>
-<li>Una copia local completa permite lectura después de la desconexión, mientras que una copia parcial requiere una fuente adicional. Ese contraste vuelve observable el significado de persistencia distribuida.</li>
-<li>La arquitectura P2P conserva dependencias y responsabilidades. Bootstrap, conectividad y conservación deben planificarse, y la distribución no garantiza anonimato de los participantes.</li>
-</ol>
-</section>
-<section id="aprendizajes" class="report-section " aria-labelledby="aprendizajes-title">
-<div class="section-heading">
-<span class="section-index">aprendizajes</span>
-<h2 id="aprendizajes-title">Aprendizajes</h2>
-</div>
-<p>Aprendimos a separar descubrimiento, transporte y replicación, y a interpretar la disponibilidad a partir de bloques concretos. El modelo kill-seeder nos permitió comprender por qué la resiliencia depende de copias útiles y peers activos, y por qué una aplicación sin servidor central todavía necesita infraestructura y reglas de responsabilidad.</p>
-</section>
-<section id="documentacion" class="report-section " aria-labelledby="documentacion-title">
-<div class="section-heading">
-<span class="section-index">documentacion</span>
-<h2 id="documentacion-title">Documentación y fuentes</h2>
-</div>
-<a class="doc-link" href="README.md">Leer el README del laboratorio 16 ↗</a>
-<a class="doc-link" href="P2P.md">Consultar P2P.md ↗</a>
-<p>Las referencias fundamentan los protocolos y las declaraciones atribuidas. Los cálculos locales, modelos didácticos y límites de observación se explican junto a cada resultado.</p>
-<ul class="sources">
-<li>
-<a href="https://docs.pears.com/" target="_blank" rel="noopener noreferrer">Pear · documentación del ecosistema ↗</a>
-</li>
-<li>
-<a href="https://github.com/holepunchto/hyperswarm" target="_blank" rel="noopener noreferrer">Hyperswarm · API oficial ↗</a>
-</li>
-<li>
-<a href="https://github.com/holepunchto/hypercore" target="_blank" rel="noopener noreferrer">Hypercore · API oficial ↗</a>
-</li>
-<li>
-<a href="https://www.bittorrent.org/beps/bep_0003.html" target="_blank" rel="noopener noreferrer">BitTorrent · BEP 3 ↗</a>
-</li>
-<li>
-<a href="https://cdn.ca9.uscourts.gov/datastore/opinions/2005/08/15/0355894o.pdf" target="_blank" rel="noopener noreferrer">Grokster · resolución judicial histórica ↗</a>
-</li>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Lab 16 de 20230285: código P2P con Hyperswarm y Hypercore, evidencia verificable y análisis para PactTrail."><title>Lab 16 / P2P · 20230285</title><link rel="stylesheet" href="web/style.css"><script defer src="web/app.js"></script></head>
+<body><a class="skip" href="#contenido">Saltar al contenido</a>
+<header class="topbar"><a class="brand" href="#inicio">CS031 <span>/ LAB 16</span></a><nav aria-label="Secciones"><a href="#ruta">Cómo funciona</a><a href="#ejecutar">Ejecutar</a><a href="#evidencia">Evidencia</a><a href="#analisis">P2P.md</a></nav><span class="student">20230285</span></header>
+<main id="contenido"><section class="hero" id="inicio"><div class="hero-copy"><p class="eyebrow">Sesión 19 · Discovery / Exchange / Liability</p><h1>Los bits viajan<br>entre <em>peers.</em></h1><p class="lead">Hyperswarm encuentra la contraparte. Hypercore entrega el archivo. Los logs cuentan qué ocurrió.</p><div class="hero-actions"><a class="button" href="#ejecutar">Ejecutar el laboratorio <span aria-hidden="true">↓</span></a><a class="outline" href="P2P.md">Leer P2P.md ↗</a></div><p class="hero-caption">20230285 · PactTrail · Node.js fallback · HTML local</p></div>
+<div class="network-art" aria-label="Diagrama: dos peers usan una DHT para descubrirse y luego intercambian datos"><div class="art-label">TOPOLOGÍA DEL LAB</div><svg viewBox="0 0 480 340" role="img" aria-labelledby="network-title"><title id="network-title">Discovery mediante DHT y conexión cifrada entre peers</title><path class="discovery-path" d="M94 120 L242 59 L390 120 M242 59 L242 234"/><path class="exchange-path" d="M110 154 C180 205 290 205 370 154"/><circle class="node-halo" cx="94" cy="134" r="48"/><circle class="node-halo" cx="390" cy="134" r="48"/><rect class="node" x="57" y="106" width="74" height="58" rx="9"/><rect class="node" x="353" y="106" width="74" height="58" rx="9"/><circle class="dht-node" cx="242" cy="59" r="25"/><circle class="dht-node small" cx="242" cy="234" r="13"/><text x="94" y="140">A</text><text x="390" y="140">B</text><text class="dht-text" x="242" y="63">DHT</text><text class="svg-caption" x="94" y="223">SEEDER</text><text class="svg-caption" x="390" y="223">DOWNLOADER</text><text class="svg-caption accent" x="242" y="301">CONEXIÓN CIFRADA · IP VISIBLE AL PEER</text></svg><div class="art-bottom"><span><i></i> Topic / lookup</span><span><i class="orange"></i> Exchange</span></div></div></section>
+<section class="state-banner" aria-label="Estado real"><span class="status-dot"></span><div><strong>Código preparado · kickoff entre compañeros pendiente</strong><p>Kickoff entre compañeros pendiente: no hay mensajes correlacionados de ambos lados. La preparación registró fallos; revisa la evidencia y ejecuta en una terminal con acceso permitido a npm.</p></div><a href="#evidencia">Ver registros ↗</a></section>
+<section class="metrics" aria-label="Conteos observados"><div><span>TOPIC PROPUESTO</span><strong class="mono">5f12612ab966</strong><small>cs031-s19-20261013</small></div><div><span>MENSAJES COTEJADOS · CLASE</span><strong>00</strong><small>envío y recepción en runs distintos</small></div><div><span>ARCHIVO PROPIO</span><strong>768 <i>KiB</i></strong><small>786432 bytes · límite ≤1 MB</small></div><div><span>KILLS REGISTRADOS</span><strong>00</strong><small>experimento sin resultado observado</small></div></section>
+<section class="section" id="ruta"><div class="section-heading"><p class="eyebrow">01 / La ruta de un mensaje</p><h2>Discovery no es storage.</h2><p>El topic permite encontrarse. La conexión transporta datos. El peer conserva y sirve los bloques.</p></div><div class="flow" role="group" aria-label="Explorar etapas"><button type="button" class="flow-step active" data-stage="topic" aria-pressed="true"><span>01</span><strong>Topic</strong><small>SHA-256 · 32 bytes</small></button><span class="flow-arrow" aria-hidden="true">→</span><button type="button" class="flow-step" data-stage="dht" aria-pressed="false"><span>02</span><strong>DHT lookup</strong><small>Bootstrap / HyperDHT</small></button><span class="flow-arrow" aria-hidden="true">→</span><button type="button" class="flow-step" data-stage="connect" aria-pressed="false"><span>03</span><strong>Connection</strong><small>Holepunch si aplica / Noise</small></button><span class="flow-arrow" aria-hidden="true">→</span><button type="button" class="flow-step" data-stage="exchange" aria-pressed="false"><span>04</span><strong>Exchange</strong><small>Ping / Hypercore</small></button></div><div class="flow-explanation" id="stage-description" aria-live="polite"><span class="mono">01 / TOPIC</span><p>Ambos peers deben usar el mismo texto. SHA-256 produce un Buffer de 32 bytes; el topic no es una contraseña, una IP ni un servidor. El propuesto debe confirmarse con el compañero.</p></div><div class="infra-note"><strong>Infraestructura que sigue ahí</strong><p>Bootstrap públicos: node1, node2 y node3.hyperdht.org:49737. La prueba local configura su propia DHT en loopback. Relay en Internet: no determinado sin observación. Cifrado no significa anonimato.</p><a href="https://github.com/holepunchto/hyperdht">Referencia de HyperDHT ↗</a></div></section>
+<section class="section" id="ejecutar"><div class="section-heading"><p class="eyebrow">02 / Código listo para ejecutar</p><h2>Dos terminales.<br>Un topic compartido.</h2><p>Requiere Node ≥22, dependencias instaladas y red que permita discovery. Los comandos de Windows usan npm.cmd.</p></div><div class="commands-grid"><div class="command"><div class="command-head"><span>Preparación</span><button class="copy" type="button" aria-label="Copiar comando Preparación">Copiar</button></div><pre><code>npm.cmd install --cache .npm-cache --no-audit --no-fund
+npm.cmd run sample
+npm.cmd run check</code></pre><p>Instala el stack y crea un archivo de texto propio. Este entorno registró EACCES de instalación.</p></div><div class="command"><div class="command-head"><span>Peer A · tu terminal</span><button class="copy" type="button" aria-label="Copiar comando Peer A · tu terminal">Copiar</button></div><pre><code>npm.cmd run chat -- --scope class --timeout 60000</code></pre><p>Usa carnet 20230285 y el topic configurado. Guarda JSONL automáticamente.</p></div><div class="command"><div class="command-head"><span>Peer B · compañero</span><button class="copy" type="button" aria-label="Copiar comando Peer B · compañero">Copiar</button></div><pre><code>npm.cmd run chat -- --scope class --carnet CARNET_DEL_COMPANERO --topic cs031-s19-20261013 --timeout 60000</code></pre><p>Reemplazar su carnet. Pedir su log real y copiarlo a evidence/companion/.</p></div><div class="command"><div class="command-head"><span>Transferencia · seeder</span><button class="copy" type="button" aria-label="Copiar comando Transferencia · seeder">Copiar</button></div><pre><code>npm.cmd run seed -- --file samples/lab16.txt --scope class</code></pre><p>Comparte CORE_KEY: es pública. La carpeta .runtime contiene claves privadas y se conserva local.</p></div><div class="command"><div class="command-head"><span>Transferencia · downloader</span><button class="copy" type="button" aria-label="Copiar comando Transferencia · downloader">Copiar</button></div><pre><code>npm.cmd run download -- --key PUBLIC_KEY --scope class --delay 150</code></pre><p>Reemplazar PUBLIC_KEY. Verifica SHA-256 y tamaño; no sobrescribe outputs.</p></div><div class="command"><div class="command-head"><span>Kill-seeder local + informe</span><button class="copy" type="button" aria-label="Copiar comando Kill-seeder local + informe">Copiar</button></div><pre><code>npm.cmd run experiment -- --scenario all
+npm.cmd run report</code></pre><p>Procesos reales en una DHT privada. Se etiquetan local; no se presentan como dos compañeros.</p></div></div><details class="guide"><summary>Leer guía completa, diagnóstico y kill manual</summary><article class="prose"><h2>LAB #16 · 20230285 · PactTrail</h2>
+<p>Proyecto Node.js del fallback permitido: Hyperswarm para discovery y mensajes; Hypercore para archivos. Abre <a href="index.html">index.html</a> para el informe y sus evidencias. No requiere API keys. El HTML es un artefacto local; no se ha publicado un sitio ni enviado mensajes al chat del curso.</p>
+<h3>1. Preparación (Windows / PowerShell)</h3>
+<pre><code>npm.cmd install --cache .npm-cache --no-audit --no-fund
+npm.cmd run check
+npm.cmd run sample
+npm.cmd test</code></pre>
+<p>Node &gt;=22. Se usa npm.cmd porque PowerShell puede bloquear npm.ps1. En Linux/macOS usa npm. <code>.npm-cache</code> está dentro del proyecto para funcionar con permisos restringidos. Si el entorno bloquea el registro npm, instala desde una terminal con acceso permitido; no cambies la política de ejecución ni el firewall automáticamente. No se incluye package-lock.json hasta lograr una instalación válida: npm lo creará para fijar versiones; consérvalo en tu entrega y luego usa npm ci.</p>
+<p>La configuración está en <a href="lab.config.json">lab.config.json</a>: carnet <code>20230285</code>, topic <strong>propuesto</strong> <code>cs031-s19-20261013</code>. El hash SHA-256 da los 32 bytes. Acuerda ese texto con el compañero: inventar un topic distinto al del aula impide encontrar a sus peers. No contiene el carnet. No es contraseña ni control de acceso.</p>
+<h3>2. Kickoff: dos laptops, mismo topic</h3>
+<p>Terminal tuya:</p>
+<pre><code>npm.cmd run chat -- --scope class --timeout 60000</code></pre>
+<p>Terminal del compañero (el mismo proyecto):</p>
+<pre><code>npm.cmd run chat -- --scope class --carnet CARNET_DEL_COMPANERO --topic cs031-s19-20261013 --timeout 60000</code></pre>
+<p>Al conectar cada lado envía su ping, registra recepción y acusa recibo. Si quieres escribir más mensajes usa la terminal interactiva. <code>/quit</code> o Ctrl+C termina. El programa imprime las dos líneas solicitadas para que <strong>tú</strong> las pegues en el chat del lab. No las envía automáticamente.</p>
+<p>Los archivos <code>evidence/*.jsonl</code> registran timestamp UTC, runId, scope, public key truncada, payload y dirección remota observable del socket. <code>remote.host: null</code> significa que la API no expuso una dirección; no se inventa una IP. Un endpoint de loopback no prueba una IP pública, holepunch ni relay. El carnet del mensaje identifica al remitente declarado; la key autentica el transporte, no la identidad civil.</p>
+<p>Pide al compañero <strong>su log real</strong> y cópialo a <code>evidence/companion/</code>. Ambos logs deben contener el mismo topicId y mensajes coincidentes por messageId. Si hay timeout, conserva el log y agrega en <a href="evidence/NOTAS.md">evidence/NOTAS.md</a> red, versión, coordinación y pruebas autorizadas. No concluyas “UDP bloqueado” solamente porque no hubo peers. Hotspot solo si lo autoriza el instructor.</p>
+<h3>3. Archivo propio de 768 KiB</h3>
+<p><code>npm.cmd run sample</code> crea <code>samples/lab16.txt</code>: 786432 bytes (768 KiB), texto sintético original, sin PII ni contenido de terceros. El protocolo también rechaza archivos mayores que 1,000,000 bytes, límite conservador de 1 MB.</p>
+<p>Laptop A, seeder:</p>
+<pre><code>npm.cmd run seed -- --file samples/lab16.txt --scope class --timeout 300000</code></pre>
+<p>Copia el valor <code>CORE_KEY</code> mostrado en stderr o el campo <code>key</code> de <code>.runtime/handoff.json</code>. Es la <strong>clave pública del core</strong>, distinta de la key del peer y del topic del kickoff. No compartas el directorio <code>.runtime</code>, que contiene almacenamiento y claves de escritura.</p>
+<p>Laptop B, downloader (reemplaza PUBLIC_KEY):</p>
+<pre><code>npm.cmd run download -- --key PUBLIC_KEY --scope class --delay 150 --block-timeout 15000 --timeout 120000</code></pre>
+<p>Usan el discoveryKey del Hypercore como topic separado para el archivo. El bloque 0 es el manifest firmado; los siguientes son fragmentos de 16 KiB. Hypercore valida su estructura autenticada y el downloader comprueba tamaño y SHA-256 del archivo reconstruido. <code>transfer_complete</code> y <code>verified: true</code> son la evidencia de integridad. El output se guarda en <code>downloads/</code>, sin sobrescribir archivos existentes.</p>
+<p>La pausa está <strong>entre solicitudes secuenciales</strong>: deja tiempo para detener el seeder y evita solicitar todo el archivo de golpe. <code>block_downloaded</code> mide datos recibidos; <code>progress</code> mide datos consumidos. Si todo llegó antes del kill, terminar después no prueba que sobrevivió la red.</p>
+<h3>4. Kill-seeder manual entre compañeros</h3>
+<ul>
+<li>Empieza con un downloader nuevo (el programa crea storage único). Mantén solo el seeder A y el downloader B en ese discoveryKey.</li>
+<li>En B espera a <code>progress</code> cerca de 50%. En A detén <strong>ese</strong> proceso Node a la fuerza. En Windows: <code>Stop-Process -Id PID_DEL_SEEDER -Force</code>; en Unix: <code>kill -9 PID_DEL_SEEDER</code>. Obtén el PID de la terminal que iniciaste; no mates todos los procesos Node.</li>
+<li>Anota hora UTC del kill, PID, último bloque recibido y bytes pendientes. Guarda consola/log del seeder aunque no tenga cierre limpio. B debería registrar desconexión y timeout si nadie tiene los bloques faltantes; documenta lo que realmente ocurra.</li>
+<li>Contrasta con una tercera laptop C: primero descarga todo con <code>--stay --delay 0</code>; espera <code>replica_ready</code>. Luego inicia B de cero y mata A a mitad. C permanece sirviendo el core aunque no tiene private key para escribir. Comprueba <code>transfer_complete</code> y qué IP/peer sirvió los bloques después del kill.</li>
+<li>El número de conexiones no equivale al número de seeders completos. Un leecher solo ofrece bloques que tiene. Una DHT no aloja mágicamente tu archivo.</li>
 </ul>
-</section>
-</div>
-</div>
-</main>
-<footer class="site-footer">
-<a href="../index.html">← Colección Web3 Labs</a>
-<p>Laboratorio 16 · Pear, Hyperswarm y Hypercore · Sesión 19</p>
-<a href="#">Volver al inicio ↑</a>
-</footer>
-</body>
-</html>
+<p>No se ha ejecutado una transferencia con un compañero desde este entorno. No presentes los resultados esperados como observados.</p>
+<h3>5. Experimento automático local (procesos reales)</h3>
+<pre><code>npm.cmd run experiment -- --scenario all</code></pre>
+<p>Arranca una DHT privada con bootstrap y nodo persistente en <code>127.0.0.1</code>, dos procesos de chat y tres escenarios: baseline sin kill, single sin otro seeder, replica con otro seeder completo. El controlador mata únicamente su proceso hijo al 50%, verifica que aún faltaban bytes de red y registra el resultado real. Scope <code>local-automated</code>: <strong>no equivale al kickoff entre compañeros</strong> ni prueba NAT/holepunch de Internet. Sin dependencias o UDP permitido esta prueba no se puede ejecutar.</p>
+<p>Para ejecutar uno: <code>--scenario chat</code>, <code>baseline</code>, <code>single</code> o <code>replica</code>. Logs separados por suite en <code>evidence/local-*/</code>. La alternativa de otra laptop se documenta en §4; el controlador automático no administra procesos ajenos.</p>
+<h3>6. Informe y entrega</h3>
+<pre><code>npm.cmd run report
+npm.cmd run serve</code></pre>
+<p>Abre <code>http://127.0.0.1:8080</code> o directamente <code>index.html</code>. El reporte es HTML estático, sin dependencias, y también funciona mediante doble clic. <code>serve</code> es un visor local del informe, no transporta los mensajes/archivos P2P. Solo expone documentos, fuentes y evidence; bloquea <code>.runtime</code>, node_modules y traversal. No publica IPs a Internet.</p>
+<p><code>report</code> escanea logs existentes, incluye previews y enlaces, calcula pares de mensajes coincidentes, marca local vs class y actualiza el bloque automático de P2P.md. Ejecuta otra vez después de recibir el log del compañero. <code>.runtime</code> y <code>downloads</code> no entran al reporte público. Los logs pueden revelar IPs y carnet: revisa con el compañero antes de publicar en el carnet; conserva originales privados si debes redactar una copia.</p>
+<p>Entrega: enlace <strong>LAB #16 → index.html / P2P.md</strong>, logs de ambos lados y nota del kill. <a href="P2P.md">P2P.md</a>, <a href="KILL-SEEDER.md">KILL-SEEDER.md</a>, <a href="VENTURE.md">VENTURE.md</a>, <a href="REFLEXIONES.md">REFLEXIONES.md</a>, <a href="evidence/NOTAS.md">evidence/NOTAS.md</a>. El memo y el journal usan PactTrail; la postura y el tally requieren tu revisión y los votos reales de clase.</p>
+<h3>Qué sí verifica este entorno</h3>
+<p><code>npm.cmd test</code> comprueba límites del protocolo, hash, muestras, paths, consistencia del reporte con logs y respuesta HTTP del visor, incluyendo bloqueo de claves y rutas privadas. <code>npm.cmd run check</code> valida sintaxis y captura disponibilidad de dependencias. Ni estas pruebas ni un intento fallido de npm certifican un intercambio P2P real. La preparación fallida se documenta en <code>evidence/preparation.jsonl</code>.</p></article></details></section>
+<section class="section evidence-section" id="evidencia"><div class="section-heading"><p class="eyebrow">03 / Evidencia auditable</p><h2>Un log real vale más<br>que una historia perfecta.</h2><p>Se muestran únicamente archivos existentes. Un fallo de npm no demuestra un bloqueo UDP. La etiqueta class requiere confirmar el origen.</p></div><div class="evidence-toolbar"><div class="filters" role="group" aria-label="Filtrar evidencia"><button class="filter active" data-filter="all" aria-pressed="true">Todo</button><button class="filter" data-filter="class" aria-pressed="false">Clase</button><button class="filter" data-filter="local-automated" aria-pressed="false">Local</button><button class="filter" data-filter="preparation" aria-pressed="false">Preparación</button></div><a href="evidence/manifest.json">Índice JSON ↗</a></div><div class="evidence-grid"><article class="evidence-card" data-scope="preparation"><div class="evidence-meta"><span class="pill">Preparación</span><span>4 eventos · 1327 bytes</span></div><h3><a href="evidence/2026-10-13T14-41-37-590Z-check-d103a480.jsonl">evidence/2026-10-13T14-41-37-590Z-check-d103a480.jsonl</a></h3><p>2026-10-13T14:41:39.196Z</p><details><summary>Ver eventos registrados</summary><pre>{
+  &quot;dependency&quot;: &quot;hyperswarm&quot;,
+  &quot;code&quot;: &quot;ERR_MODULE_NOT_FOUND&quot;,
+  &quot;message&quot;: &quot;Cannot find package &#39;hyperswarm&#39; imported from C:\\Users\\juanl\\Downloads\\Lab16\\scripts\\check.mjs&quot;,
+  &quot;timestamp&quot;: &quot;2026-10-13T14:41:39.196Z&quot;,
+  &quot;runId&quot;: &quot;2026-10-13T14-41-37-590Z-check-d103a480&quot;,
+  &quot;scope&quot;: &quot;preparation&quot;,
+  &quot;role&quot;: &quot;check&quot;,
+  &quot;event&quot;: &quot;dependency_missing&quot;
+}
+
+{
+  &quot;dependency&quot;: &quot;hypercore&quot;,
+  &quot;code&quot;: &quot;ERR_MODULE_NOT_FOUND&quot;,
+  &quot;message&quot;: &quot;Cannot find package &#39;hypercore&#39; imported from C:\\Users\\juanl\\Downloads\\Lab16\\scripts\\check.mjs&quot;,
+  &quot;timestamp&quot;: &quot;2026-10-13T14:41:39.198Z&quot;,
+  &quot;runId&quot;: &quot;2026-10-13T14-41-37-590Z-check-d103a480&quot;,
+  &quot;scope&quot;: &quot;preparation&quot;,
+  &quot;role&quot;: &quot;check&quot;,
+  &quot;event&quot;: &quot;dependency_missing&quot;
+}
+
+{
+  &quot;dependency&quot;: &quot;hyperdht&quot;,
+  &quot;code&quot;: &quot;ERR_MODULE_NOT_FOUND&quot;,
+  &quot;message&quot;: &quot;Cannot find package &#39;hyperdht&#39; imported from C:\\Users\\juanl\\Downloads\\Lab16\\scripts\\check.mjs&quot;,
+  &quot;timestamp&quot;: &quot;2026-10-13T14:41:39.200Z&quot;,
+  &quot;runId&quot;: &quot;2026-10-13T14-41-37-590Z-check-d103a480&quot;,
+  &quot;scope&quot;: &quot;preparation&quot;,
+  &quot;role&quot;: &quot;check&quot;,
+  &quot;event&quot;: &quot;dependency_missing&quot;
+}
+
+{
+  &quot;node&quot;: &quot;v24.18.1&quot;,
+  &quot;syntaxPassed&quot;: true,
+  &quot;filesChecked&quot;: 14,
+  &quot;dependenciesReady&quot;: false,
+  &quot;peerExchangeVerified&quot;: false,
+  &quot;limitation&quot;: &quot;Sintaxis e imports no verifican transporte, NAT, transferencia ni kill.&quot;,
+  &quot;timestamp&quot;: &quot;2026-10-13T14:41:39.200Z&quot;,
+  &quot;runId&quot;: &quot;2026-10-13T14-41-37-590Z-check-d103a480&quot;,
+  &quot;scope&quot;: &quot;preparation&quot;,
+  &quot;role&quot;: &quot;check&quot;,
+  &quot;event&quot;: &quot;checks_complete&quot;
+}</pre></details><a class="text-link" href="evidence/2026-10-13T14-41-37-590Z-check-d103a480.jsonl" download>Descargar JSONL <span aria-hidden="true">↗</span></a></article><article class="evidence-card" data-scope="preparation"><div class="evidence-meta"><span class="pill">Preparación</span><span>1 eventos · 461 bytes</span></div><h3><a href="evidence/preparation.jsonl">evidence/preparation.jsonl</a></h3><p>2026-10-13T14:40:32.618Z</p><details><summary>Ver eventos registrados</summary><pre>{
+  &quot;command&quot;: &quot;npm.cmd install --no-audit --no-fund&quot;,
+  &quot;exitCode&quot;: 1,
+  &quot;code&quot;: &quot;EACCES&quot;,
+  &quot;failedUrl&quot;: &quot;https://registry.npmjs.org/hypercore&quot;,
+  &quot;timestampMeaning&quot;: &quot;Hora de documentar el error observado; ver INSTALLATION.md para el output capturado&quot;,
+  &quot;peerConnectionAttempted&quot;: false,
+  &quot;evidence&quot;: &quot;evidence/INSTALLATION.md&quot;,
+  &quot;timestamp&quot;: &quot;2026-10-13T14:40:32.618Z&quot;,
+  &quot;runId&quot;: &quot;2026-10-13T14-40-32-616Z-install-8aec4301&quot;,
+  &quot;scope&quot;: &quot;preparation&quot;,
+  &quot;role&quot;: &quot;install&quot;,
+  &quot;event&quot;: &quot;install_failed&quot;
+}</pre></details><a class="text-link" href="evidence/preparation.jsonl" download>Descargar JSONL <span aria-hidden="true">↗</span></a><p><a class="text-link" href="evidence/INSTALLATION.md">evidence/INSTALLATION.md ↗</a></p></article><article class="evidence-card" data-scope="preparation"><div class="evidence-meta"><span class="pill">Preparación</span><span>4 eventos · 1224 bytes</span></div><h3><a href="evidence/validation.jsonl">evidence/validation.jsonl</a></h3><p>2026-10-13T14:41:41.761Z</p><details><summary>Ver eventos registrados</summary><pre>{
+  &quot;passed&quot;: true,
+  &quot;exitCode&quot;: 0,
+  &quot;output&quot;: &quot;evidence/tests.tap.txt&quot;,
+  &quot;limit&quot;: &quot;No verifica Hyperswarm en red, Hypercore en ejecución ni kill-seeder. Requiere instalar dependencias para esas pruebas.&quot;,
+  &quot;timestamp&quot;: &quot;2026-10-13T14:41:42.737Z&quot;,
+  &quot;runId&quot;: &quot;2026-10-13T14-41-41-759Z-validation-5c8b489e&quot;,
+  &quot;scope&quot;: &quot;preparation&quot;,
+  &quot;role&quot;: &quot;validation&quot;,
+  &quot;event&quot;: &quot;validation_result&quot;
+}
+
+{
+  &quot;passed&quot;: true,
+  &quot;exitCode&quot;: 0,
+  &quot;output&quot;: &quot;evidence/tests.tap.txt&quot;,
+  &quot;limit&quot;: &quot;No verifica Hyperswarm en red, Hypercore en ejecución ni kill-seeder. Requiere instalar dependencias para esas pruebas.&quot;,
+  &quot;timestamp&quot;: &quot;2026-10-13T14:44:01.330Z&quot;,
+  &quot;runId&quot;: &quot;2026-10-13T14-43-59-899Z-validation-78ceebba&quot;,
+  &quot;scope&quot;: &quot;preparation&quot;,
+  &quot;role&quot;: &quot;validation&quot;,
+  &quot;event&quot;: &quot;validation_result&quot;
+}</pre></details><a class="text-link" href="evidence/validation.jsonl" download>Descargar JSONL <span aria-hidden="true">↗</span></a><p><a class="text-link" href="evidence/tests.tap.txt">evidence/tests.tap.txt ↗</a></p></article></div><p class="empty-state" id="empty-state" hidden>No hay registros en esta categoría. Ejecuta los scripts y vuelve a generar el informe.</p><p class="evidence-foot">Clase: 0 connection · 0 received · 0 timeout. Local: 0 connection · 0 mensajes cotejados. <a href="evidence/NOTAS.md">Diagnóstico y procedencia ↗</a></p></section>
+<section class="section" id="kill"><div class="section-heading"><p class="eyebrow">04 / Experimento de disponibilidad</p><h2>¿Qué pasa si el seeder<br>deja de estar?</h2><p>La muerte del proceso solo prueba disponibilidad si todavía faltaban bytes por recibir. Se contrasta una fuente única con una replica completa.</p></div><div class="table-scroll"><table><thead><tr><th>Escenario</th><th>Resultado observado</th><th>Otro seeder</th><th>Validez del kill</th><th>Origen</th></tr></thead><tbody><tr><td>baseline</td><td>Pendiente</td><td>A disponible</td><td>Sin ejecución observada</td><td>—</td></tr><tr><td>single</td><td>Pendiente</td><td>Previsto: solo A</td><td>Sin ejecución observada</td><td>—</td></tr><tr><td>replica</td><td>Pendiente</td><td>Previsto: replica C</td><td>Sin ejecución observada</td><td>—</td></tr></tbody></table></div><div class="callout"><strong>Predicción ≠ resultado</strong><p>Sin una fuente de los bloques pendientes, esperamos timeout. Con una replica disponible, podría completar. La tabla cambia solo cuando el controlador registra eventos reales; un porcentaje de progreso no inventa evidencia.</p></div><details class="guide"><summary>Pasos, tamaño y registro del kill</summary><article class="prose"><h2>Transferencia y kill-seeder · 20230285</h2>
+<h3>Estado de la evidencia</h3>
+<p>La instalación en este entorno falló con EACCES al acceder a npm. No se observó todavía transferencia ni kill real. Los escenarios siguientes son procedimientos y predicciones, <strong>no resultados de clase</strong>. Después de ejecutar, <code>npm.cmd run report</code> mostrará los eventos reales en el HTML y P2P.md. Agrega debajo el log del compañero y tus observaciones.</p>
+<h3>Diseño</h3>
+<ul>
+<li>Archivo: <code>samples/lab16.txt</code>, generado por <code>npm.cmd run sample</code>, <strong>786432 bytes / 768 KiB</strong> de texto propio sin PII ni copyright ajeno.</li>
+<li>Protocolo: Hypercore, manifest en bloque 0, <strong>48 bloques de archivo de 16384 bytes</strong>. Discovery por <code>core.discoveryKey</code>.</li>
+<li>Integridad: Merkle/firma del core más SHA-256 final; el manifest contiene el digest esperado. Ver <a href="samples/sample.json">sample.json</a>.</li>
+<li>Estado inicial: storage nuevo por downloader; no reutilizar una descarga previa para probar el kill.</li>
+<li>Momento del kill: cerca de 50%, con datos de red todavía pendientes. Registrar <code>networkBytesAtKill</code>; no usar solo bytes leídos.</li>
+</ul>
+<h3>Escenarios automáticos locales</h3>
+<pre><code>npm.cmd run experiment -- --scenario all
+npm.cmd run report</code></pre>
+<div class="table-scroll"><table><thead><tr><th>Escenario</th><th>Peers con todo el archivo antes del kill</th><th>Acción</th><th>Predicción a contrastar</th></tr></thead><tbody>
+<tr><td>baseline</td><td>Seeder A</td><td>No matar</td><td>B verifica y completa</td></tr>
+<tr><td>single</td><td>Solo A</td><td>Matar A a 50%</td><td>B espera/falla por bloques faltantes</td></tr>
+<tr><td>replica</td><td>A y C, replica completa</td><td>Matar A a 50%</td><td>B puede completar desde C</td></tr>
+</tbody></table></div>
+<p>El controlador arranca una DHT privada en loopback y procesos separados, captura logs por rol, mata únicamente el seeder hijo con SIGKILL y guarda <code>scenario_result</code>. La prueba es de disponibilidad y replicación locales. No demuestra Internet, holepunch ni un compañero de clase. Si no faltaban bytes al kill, <code>validKill</code> será false. El proceso C tiene una copia de lectura que permite servir bloques, sin la clave privada del escritor.</p>
+<h3>Registro manual con otro alumno</h3>
+<p>Sigue <a href="README.md">README.md §4</a>. Completa con hechos:</p>
+<div class="table-scroll"><table><thead><tr><th>Dato</th><th>Observación real</th></tr></thead><tbody>
+<tr><td>Identificador del compañero</td><td>Pendiente</td></tr>
+<tr><td>Fecha UTC / red / topicId</td><td>Pendiente</td></tr>
+<tr><td>Log de seeder A</td><td>Pendiente; enlazar JSONL</td></tr>
+<tr><td>Log de downloader B</td><td>Pendiente; enlazar JSONL</td></tr>
+<tr><td>Hora de kill y PID exacto</td><td>Pendiente</td></tr>
+<tr><td>Último bloque y bytes de red al kill</td><td>Pendiente</td></tr>
+<tr><td>¿Quedó otro seeder completo?</td><td>Pendiente; nombrar evidencia de replica_ready</td></tr>
+<tr><td>¿Completó? ¿SHA-256 coincidió?</td><td>Pendiente</td></tr>
+<tr><td>¿Qué vio B? Desconexión, espera, cambio de peer</td><td>Pendiente</td></tr>
+<tr><td>Endpoint visto por B / A</td><td>Pendiente; conservar dato de socket o null</td></tr>
+</tbody></table></div>
+<p>Cuando se dispone de dos peers solamente, un resultado sin completar puede ser el hallazgo esperado. Para completar tras la muerte de A debe haber copia suficiente en algún peer accesible o todo el contenido ya debe haber llegado. El sistema DHT descubre fuentes; no reconstruye bloques que nadie conserva.</p></article></details></section>
+<section class="section analysis-section" id="analisis"><div class="section-heading"><p class="eyebrow">05 / Infraestructura y responsabilidad</p><h2>Menos servidor propio.<br>Más decisiones compartidas.</h2><p>Napster concentra el índice; BitTorrent puede repartir discovery y piezas. Grokster mantiene una pregunta sobre quien promueve el uso del software.</p></div><div class="comparison"><div><p class="eyebrow">HOST CENTRALIZADO</p><h3>Un punto de intervención</h3><p>Operador, bucket, disponibilidad y mecanismos de retiro. El uploader conserva responsabilidad por su conducta.</p></div><div><p class="eyebrow">PEERS / SEEDERS</p><h3>Copias y control repartidos</h3><p>Cada peer ofrece lo que tiene. Retirar una fuente no elimina todas las replicas. Maintainers y empresa conservan decisiones y exposición.</p></div></div><article class="prose p2p-document"><h2>LAB #16 · P2P sin servidor de aplicación</h2>
+<p>Carnet: <strong>20230285</strong>. Venture: <strong>PactTrail</strong>, contratos inteligentes que liberan un pago cuando se completan tareas. Stack implementado: Node.js (fallback autorizado), Hyperswarm, HyperDHT y Hypercore. Pear es el runtime del ecosistema; no se afirmó haber instalado Pear ni ejecutado <code>pear init</code>. Topic propuesto: <code>cs031-s19-20261013</code>; debe coincidir con el acordado por ambos compañeros.</p>
+<h3>1. Qué se construyó y qué se observó</h3>
+<p>El repositorio contiene dos flujos independientes: un chat de kickoff y la replicación de un archivo. Ambos usan discovery P2P, mientras el HTML presenta la evidencia. El servidor HTTP opcional sirve este informe en localhost; no participa en el intercambio. Las ejecuciones producen JSONL, con timestamps UTC, keys de peers truncadas, mensajes y endpoints observables. Los resultados reales aparecen abajo; una ausencia de logs se presenta como pendiente.</p>
+<p><strong>Estado:</strong> Kickoff entre compañeros pendiente: no hay mensajes correlacionados de ambos lados.</p>
+<p>Topic propuesto <code>cs031-s19-20261013</code>; topicId corto <code>5f12612ab966</code>.</p>
+<ul>
+<li>Clase: 0 conexiones registradas; 0 mensajes recibidos; 0 envíos correlacionados con recepción en otro runId; 0 archivos verificados.</li>
+<li>Local: 0 conexiones; 0 mensajes correlacionados; 0 archivos verificados. No representan la red del aula.</li>
+<li>Kill observado por controlador: 0 eventos. Experimento pendiente; no se infiere un resultado.</li>
+<li>Preparación: 4 fallos de instalación/disponibilidad registrados; no equivalen a no peers en Hyperswarm.</li>
+</ul>
+<ul>
+<li><a href="evidence/2026-10-13T14-41-37-590Z-check-d103a480.jsonl">evidence/2026-10-13T14-41-37-590Z-check-d103a480.jsonl</a>: 4 eventos.</li>
+<li><a href="evidence/preparation.jsonl">evidence/preparation.jsonl</a>: 1 eventos.</li>
+<li><a href="evidence/validation.jsonl">evidence/validation.jsonl</a>: 4 eventos.</li>
+</ul>
+<p>La evidencia entre procesos locales se etiqueta por separado. No representa dos alumnos, sus NAT o la red del aula. Tampoco se infiere que un fallo de instalación sea un timeout de discovery. Cuando tengamos ambos logs de clase, se deben cotejar mensajes por identificador y comparar los topicId. Un <code>connection</code> solo demuestra transporte; recepción y ack añaden evidencia del intercambio. El log del compañero sigue siendo necesario.</p>
+<h3>2. Discovery → transporte → datos</h3>
+<pre><code>Texto compartido: cs031-s19-20261013
+                │ SHA-256, 32 bytes
+                ▼
+         topic de Hyperswarm
+                │ join({server:true, client:true})
+                ▼
+bootstrap conocido → HyperDHT: anunciar y buscar peers
+                │ contactos y coordinación de conectividad
+                ▼
+    intento de conexión / holepunch si hace falta
+                │ ruta disponible; relay posible según red
+                ▼
+     socket cifrado Noise, public key del peer
+                ├── chat: frames ping / ack con delimitador LF
+                └── archivo: Hypercore replica manifest + bloques
+                         │ verificación y reconstrucción
+                         ▼
+                  tamaño + SHA-256 coincidentes</code></pre>
+<p>El topic identifica un interés común, no un host ni un secreto. Para archivos se usa <code>core.discoveryKey</code>, topic diferente al de chat; la public key del core se comparte por coordinación humana. Esa key permite verificar el registro; no autoriza escribir. La Noise public key identifica una conexión, mientras el carnet dentro del ping es una declaración de identidad.</p>
+<p>Como intuición de discovery, Kademlia organiza IDs con distancia XOR y contactos en k-buckets. Un lookup consulta nodos próximos a la key y refina sus candidatos. Esto distribuye el descubrimiento; no asegura privacidad, disponibilidad del contenido ni resistencia absoluta a Sybil o eclipse. Bootstrap y contactos siguen siendo necesarios. Paper original de Kademlia.</p>
+<p>El código no implementa Kademlia desde cero: delega a HyperDHT. Hyperswarm anuncia y busca el topic en modo server+client. Cuando se emite connection, captura el endpoint expuesto por socket/rawStream. No registra “holepunch exitoso” ni “directo” basándose únicamente en esa conexión. API de Hyperswarm.</p>
+<h3>3. Infraestructura que permanece</h3>
+<p>En ejecución pública, HyperDHT configura por defecto <code>node1.hyperdht.org:49737</code>, <code>node2.hyperdht.org:49737</code> y <code>node3.hyperdht.org:49737</code>, según su documentación. Son puntos de entrada, no un provider que guarda este archivo. Configurarlos no demuestra que los tres respondieron; los logs distinguen configuración de observación. Se necesitan red UDP, DNS o direcciones conocidas, routers/NAT, runtime, energía, disco y peers disponibles. HyperDHT: bootstrap e infraestructura.</p>
+<p>El experimento local automático usa un bootstrap y un nodo persistente propios en loopback; sus puertos quedan registrados. No configura relays. En Internet puede intervenir infraestructura adicional de conectividad; si la API no permite saberlo, el informe dice <strong>no determinado</strong>. No se inventa el operador de un relay ni se concluye que no hubo ninguno.</p>
+<p>“Zero-infra” describe retirar el servidor de aplicación que media los bits; el costo se reparte. La privacidad también cambia: el cifrado protege payloads en tránsito, pero el otro extremo puede observar su endpoint y los tiempos. Ambos conocen el topic que compartieron. No se supone que cada peer pueda listar todas las IP del swarm ni que el topic derive identidad. P2P no promete anonimato.</p>
+<h3>4. Archivo y pérdida del seeder</h3>
+<p>El generador produce texto sintético propio: <strong>786432 bytes</strong>, sin personas ni obra ajena. Se mantiene debajo de 1 MB. El core contiene un manifest y bloques de 16 KiB. La replicación autentica los bloques y el downloader compara el SHA-256 del archivo reconstruido. El procedimiento y el estado están en <a href="KILL-SEEDER.md">KILL-SEEDER.md</a>; los logs se enlazan desde <a href="index.html">index.html</a>.</p>
+<p>El controlador solicita bloques secuenciales con pausas y mata el seeder cerca de 50%. Registra por separado bytes consumidos y recibidos: una barra al 50% no prueba que queden bytes en red. Si se recibió todo antes del kill, el experimento no demuestra continuidad de disponibilidad. El contraste agrega un peer que descargó todo y queda sirviendo. Predicción comprobable: sin fuente de bloques pendientes habrá espera o fallo; con replica accesible podría completar. Estas predicciones se reemplazan por resultados observados únicamente al ejecutar. Hypercore: replicación y datos autenticados.</p>
+<h3>5. Arquitectura y liability</h3>
+<p>La comparación es una hipótesis de diseño para el lab. En un host centralizado existe un operador reconocible que puede recibir takedowns, suspender cuentas, reunir registros y responder solicitudes; el uploader también responde por su conducta. En P2P la disponibilidad y la retirada se reparten entre usuarios que conservan copias. Pedir a un seeder que deje de ofrecer contenido no borra las replicas de otros. El desarrollador todavía decide UX, distribución, publicidad y algunas dependencias.</p>
+<p>Napster centralizaba el índice aunque el archivo pasara entre usuarios. Ese índice concentraba intervención y exposición de la compañía. BitTorrent distribuye piezas entre peers: BEP 3 usa tracker para discovery y BEP 5 añade DHT. El tracker coordina y no necesita alojar el archivo; apagar uno puede no eliminar otras rutas de descubrimiento. Ninguna de esas topologías decide por sí misma si el uso concreto es lícito. Napster: resumen del Copyright Office, BEP 3, BEP 5.</p>
+<p>En <strong>MGM v. Grokster (2005)</strong>, promover el uso infractor mediante expresiones o acciones afirmativas puede generar responsabilidad por infracciones de terceros. Descentralizar el transporte no borra esa exposición del distribuidor. Para PactTrail, la interfaz debe explicar usos autorizados de comprobantes, sin promover evasión o distribución infractora. La topología cambia puntos de control, no concede inmunidad al cliente ni al maintainer. Ficha de Oyez; opinión judicial reproducida en Justia.</p>
+<h3>6. PactTrail y Decreto 15-2026</h3>
+<p>PactTrail puede usar P2P para entregar un comprobante propio de tarea al contratante. El contrato inteligente y el procedimiento de aceptación siguen siendo otra capa: un hash acredita integridad del archivo, no que el trabajo se hizo ni que se deba pagar. Aquí no se implementaron wallets, oráculos ni pagos. Los documentos reales de trabajo pueden contener PII; por eso el lab solo transmite material sintético.</p>
+<p><strong>Si PactTrail encuadra como Persona Obligada o PSAV bajo Decreto 15-2026, quitar el servidor no elimina los deberes aplicables de debida diligencia/KYC, registro y reportes ante IVE/SIB.</strong> El encuadre depende de sus servicios reales, incluida posible custodia, transferencia u operación para terceros, y requiere revisar norma y reglamentación. No se atribuye automáticamente el deber empresarial al usuario que seedea un documento.</p>
+<p>El Congreso identifica el Decreto 15-2026 y su entrada en vigor el <strong>17 de septiembre de 2026</strong>. El paquete del curso señala un reglamento pendiente y cita art. 127; no se confirmó aquí el articulado completo ni el estado del reglamento a la fecha de ejecución, por lo que no se afirma un número de artículo o una ausencia vigente. La Iniciativa 6538 no se usa como norma promulgada. Ficha oficial del decreto, información oficial sobre PSAV y reglamentación, junio de 2026.</p>
+<p>Aprendizaje: discovery no equivale a storage; una key no demuestra una persona; una conexión no demuestra entrega; terminar desde caché no demuestra otro seeder. El límite empírico de este trabajo se conserva junto con la evidencia, porque un fallo real vale más que una conexión inventada.</p></article><div class="document-link"><a class="outline" href="P2P.md" download>Descargar P2P.md ↗</a><button class="outline" type="button" id="print-p2p">Imprimir P2P.md</button></div></section>
+<section class="section" id="pacttrail"><div class="section-heading"><p class="eyebrow">06 / PactTrail</p><h2>La entrega puede ser P2P.<br>El pago tiene sus reglas.</h2><p>Feature propuesta: comprobantes propios de tareas. El hash verifica bytes; la aceptación del trabajo requiere un mecanismo explícito.</p></div><div class="callout legal"><strong>Oración Decreto 15-2026</strong><p>Si PactTrail es Persona Obligada / PSAV, quitar el servidor no elimina debida diligencia/KYC, registro ni reportes aplicables ante IVE/SIB. Su encuadre depende de los servicios reales. No se confirmó el estado actual del reglamento ni el articulado completo.</p></div><details class="guide"><summary>Memo zero-infra · costo, liability y revenue</summary><article class="prose"><h2>PactTrail · memo de feature zero-infra</h2>
+<p>Carnet 20230285. Propuesta de producto; no se ha desplegado ni conectado un contrato inteligente en este lab.</p>
+<p>PactTrail usa contratos inteligentes para pagar al terminar determinadas tareas. Propongo mover a P2P la <strong>entrega de comprobantes de trabajo propios</strong> entre quien ejecuta la tarea y quien la acepta. El comprobante puede ser una salida sintética, un entregable autorizado o un resumen firmado. El pago y las reglas de aceptación conservan una capa independiente. Descargar un archivo cuyo hash coincide demuestra integridad de los bits, pero no demuestra que la tarea cumple el acuerdo. La aprobación humana, un árbitro o un mecanismo de verificación explícito siguen siendo necesarios.</p>
+<p>La experiencia sería: las partes acuerdan un identificador de entrega, descubren una fuente y obtienen el comprobante; la interfaz compara el digest esperado y presenta el resultado para aceptación. Luego el contrato aplica sus condiciones de pago. El prototipo del lab implementa discovery, intercambio y replicación. No incorpora escrow, wallets, oráculos, firmas de aceptación o liberación automática de fondos. El ejemplo transmitido contiene texto original sin personas ni contratos reales; antes de adoptar la feature habría que decidir qué documentos pueden circular, por cuánto tiempo y con qué permiso. Esa decisión debe contrastarse con STORAGE.md de S18, todavía no aportado.</p>
+<p>El costo que podría removerse es el almacenamiento temporal y parte de la salida de datos de S3/VPS/Firebase usados para descargar esos comprobantes. Como presupuesto de volumen, <strong>no como tarifa de AWS</strong>, supongo diez mil entregas mensuales de 500 kB y dos descargas por entrega: diez GB mensuales de transferencia de documentos. Mantener una copia de todas las entregas del mes requeriría cinco GB antes de replicas. El ahorro en moneda debe calcularse con la factura real y la tarifa vigente del proveedor; no atribuyo un precio inventado. Tampoco desaparecen los gastos de blockchain, gas, indexación, soporte o desarrollo. El usuario aporta disco, red, energía y tiempo online; discovery y conectividad conservan dependencias.</p>
+<p>La hipótesis de liability es una distribución parcial. El proveedor central deja de recibir y servir cada comprobante, y cada seeder conserva control operativo sobre su copia. Pero PactTrail sigue diseñando la interfaz, manteniendo el cliente y presentando el servicio. Su publicidad y el comportamiento que promueve importan: el precedente estadounidense Grokster sobre inducement impide tratar descentralización como inmunidad del distribuidor. El usuario tampoco adquiere permiso para compartir obras de terceros. A diferencia de un bucket central, una orden de retiro no elimina automáticamente las replicas. Habrá que establecer responsabilidades de entrega, retención y resolución de disputas antes de prometer un SLA. Grokster.</p>
+<p>En revenue, cobraría por la coordinación del acuerdo y la gestión de hitos, sin suponer que la facturación depende de hospedar cada byte. El pago por uso podría conservarse mientras se mantenga una función de valor verificable. El ahorro de hosting puede mejorar margen, pero una descarga fallida puede aumentar soporte y reducir confianza. El acceso entre peers y la portabilidad ayudan a evitar dependencia de un único proveedor; no constituyen por sí solos un moat ni una promesa absoluta de resistencia a censura. Un seeder único offline sigue siendo una dependencia real.</p>
+<p>Los peers pueden observar endpoints IP/puerto, tiempos e interés en el topic compartido; cifrar el transporte no vuelve anónima a la contraparte. La metadata y los comprobantes sensibles necesitan una decisión explícita antes de usar documentos reales.</p>
+<p><strong>Si PactTrail es Persona Obligada/PSAV bajo Decreto 15-2026, retirar el servidor no elimina debida diligencia/KYC, registro ni reportes aplicables ante IVE/SIB.</strong> El encuadre se evalúa por los servicios que efectivamente presta, especialmente si controla activos u operaciones por cuenta de terceros. La ficha oficial fija vigencia el 17 de septiembre de 2026; el articulado y estado actual del reglamento deben comprobarse antes de concretar cumplimiento. Decreto: Congreso, PSAV y reglamentación.</p></article></details><details class="guide"><summary>Postura, tally y dialogue journal · textos para revisión personal</summary><article class="prose"><h2>Debate y dialogue journal · 20230285</h2>
+<p>Textos propuestos para revisión personal. No se afirma que se votaron ni que hubo un cross-ex real. Las observaciones empíricas se limitan al fallo de preparación documentado; completar con el kickoff y el kill cuando se ejecuten.</p>
+<h3>Postura pre-clase (A, propuesta)</h3>
+<p>Estoy en contra de interpretar la moción como un traslado completo de responsabilidad. Hyperswarm permite descubrir peers por un topic sin que PactTrail aloje cada comprobante, pero siguen existiendo bootstrap, código distribuido y decisiones de producto. Quien seedea controla su copia y puede asumir exposición por su conducta; eso no borra el papel de la empresa. Grokster muestra que promover infracciones puede mantener responsabilidad del distribuidor aun con intercambio descentralizado. En PactTrail separaría el transporte de documentos de los servicios que autorizan pagos o gestionan activos para terceros. Quiero observar si al matar un seeder queda una dependencia única o una replica útil, porque disponibilidad distribuida tampoco implica obligaciones distribuidas de igual manera. Hyperswarm, Grokster.</p>
+<h3>Tally real (pendiente de clase)</h3>
+<div class="table-scroll"><table><thead><tr><th>Postura</th><th>Pre-clase</th><th>Post-cross-ex</th><th>¿Se movió?</th><th>Razón</th></tr></thead><tbody>
+<tr><td>A favor</td><td>Pendiente</td><td>Pendiente</td><td>Pendiente</td><td>Pendiente</td></tr>
+<tr><td>En contra</td><td>Pendiente</td><td>Pendiente</td><td>Pendiente</td><td>Pendiente</td></tr>
+<tr><td>Abstención</td><td>Pendiente</td><td>Pendiente</td><td>Pendiente</td><td>Pendiente</td></tr>
+</tbody></table></div>
+<h3>Reflexión post-tally (borrador previo a evidencia)</h3>
+<p>Todavía no puedo afirmar que mi postura cambió tras el tally, porque no se registraron votos ni resultados del intercambio entre compañeros. Mi posición propuesta distingue responsabilidad operativa de exposición jurídica. Si un downloader se detiene después de perder su única fuente, ese peer funcionaba como dependencia de disponibilidad. Si completa desde una replica, el riesgo de caída se repartió; ninguna de las dos observaciones demuestra por sí misma que la empresa quedó libre de obligaciones. Grokster ofrece una razón para mantener esa distinción: la promoción de usos infractores puede comprometer al distribuidor aunque no aloje los archivos. El hallazgo real disponible es el EACCES de instalación, que limita la preparación del entorno y no identifica un bloqueo UDP. Tras ejecutar el lab, reemplazaré esta limitación por el resultado medido y diré qué argumento del cross-ex cambió o sostuvo mi voto. Para PactTrail, integridad del comprobante y legitimidad del pago seguirán requiriendo decisiones distintas. Grokster.</p>
+<h3>Dialogue journal (borrador con el límite observado)</h3>
+<p>Mi primera dependencia observable en este trabajo fue el acceso al registro de paquetes: npm devolvió EACCES al intentar instalar Hypercore. Eso impidió ejecutar Hyperswarm y el experimento de matar al seeder desde este entorno. No lo interpreto como fracaso de holepunch en el aula, porque no llegamos a esa fase. La distinción importa: sin una conexión real y sus timestamps sería fácil contar una historia convincente sobre descentralización que mis datos todavía no sostienen.</p>
+<p>El código plantea una pregunta concreta: cuando desaparece el peer que tiene los bloques restantes, ¿quién mantiene disponible la entrega? Espero contrastar un solo seeder con una replica completa. Si el downloader espera hasta timeout, su servidor operativo era esa fuente única. Si consigue bloques desde otro peer, la función de servir estaba repartida. Son hipótesis por comprobar, no experiencias que ya viví. La DHT organiza discovery; no almacena automáticamente el entregable ni sustituye al usuario offline.</p>
+<p>En PactTrail esta disponibilidad puede afectar la aceptación de una tarea y, por tanto, el momento de pago. Mover el comprobante a P2P evita que la empresa sirva todos los bytes, pero exige acordar cuánto tiempo ambas partes conservan copias y qué ocurre en una disputa. La responsabilidad del usuario por su contenido convive con las decisiones de quien mantiene la interfaz. Grokster me impide concluir que publicar un cliente equivale a quedar fuera de la cadena de responsabilidad.</p>
+<p>Todavía no tengo una IP de compañero observada. Cuando exista una conexión registraré el endpoint expuesto por el socket, el topic compartido y los tiempos; no atribuiré anonimato al cifrado. No hubo tally personal registrado. Un experimento con replicas disponibles y una explicación jurídica específica sobre el servicio real de PactTrail podrían ajustar mi postura; una etiqueta “serverless” por sí sola no la movería. Hypercore, Grokster.</p></article></details><div class="download-row"><a href="VENTURE.md">VENTURE.md ↗</a><a href="REFLEXIONES.md">REFLEXIONES.md ↗</a><a href="KILL-SEEDER.md">KILL-SEEDER.md ↗</a></div></section>
+<section class="section source-section" id="codigo"><div class="section-heading"><p class="eyebrow">07 / Artefactos de entrega</p><h2>Código, explicación<br>y procedencia.</h2></div><div class="source-links"><a href="src/cli.mjs">src/cli.mjs <span aria-hidden="true">↗</span></a><a href="src/chat.mjs">src/chat.mjs <span aria-hidden="true">↗</span></a><a href="src/file.mjs">src/file.mjs <span aria-hidden="true">↗</span></a><a href="src/network.mjs">src/network.mjs <span aria-hidden="true">↗</span></a><a href="scripts/experiment.mjs">scripts/experiment.mjs <span aria-hidden="true">↗</span></a><a href="scripts/report.mjs">scripts/report.mjs <span aria-hidden="true">↗</span></a><a href="lab.config.json">lab.config.json <span aria-hidden="true">↗</span></a><a href="package.json">package.json <span aria-hidden="true">↗</span></a></div><div class="table-scroll"><table><thead><tr><th>Criterio del lab</th><th>Peso</th><th>Artefacto y límite</th></tr></thead><tbody><tr><td>join al topic</td><td>20%</td><td>src/chat.mjs + log connection. Pendiente de ejecutar en clase.</td></tr><tr><td>Mensaje entre dos peers</td><td>25%</td><td>Logs de ambos lados o timeout con diagnóstico. Cotejo por messageId.</td></tr><tr><td>Archivo + kill-seeder</td><td>20%</td><td>src/file.mjs, controlador y KILL-SEEDER.md. Solo resultados observados.</td></tr><tr><td>P2P.md</td><td>25%</td><td>Diagrama, infraestructura, liability y oración 15-2026.</td></tr><tr><td>Aprendizaje</td><td>10%</td><td>Endpoint observable, notas y reflexiones personales por completar.</td></tr></tbody></table></div><p class="note">Estos porcentajes son los criterios del curso; no representan una nota calculada. Fuera de alcance: Pinata/Arweave, Tor, tokens y pagos reales.</p></section>
+</main><footer><span>LAB #16 · 20230285 · PactTrail</span><p>Informe generado a partir de archivos locales. Actualiza con <code>npm.cmd run report</code>.</p><a href="#inicio">Volver arriba ↑</a></footer><div class="toast" id="toast" role="status" hidden></div></body></html>

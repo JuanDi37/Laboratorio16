@@ -1,0 +1,10 @@
+{
+  "carnet": "20230285",
+  "topic": "cs031-s19-20261013",
+  "topicStatus": "Propuesto; confirmar con el compañero/instructor",
+  "venture": "PactTrail",
+  "timeoutMs": 60000,
+  "blockTimeoutMs": 15000,
+  "chunkBytes": 16384,
+  "delayMs": 150
+}

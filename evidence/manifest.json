@@ -1,0 +1,104 @@
+{
+  "generatedAt": "2026-10-13T14:44:01.399Z",
+  "topicId": "5f12612ab966",
+  "config": {
+    "carnet": "20230285",
+    "topic": "cs031-s19-20261013",
+    "topicStatus": "Propuesto; confirmar con el compañero/instructor",
+    "venture": "PactTrail",
+    "timeoutMs": 60000,
+    "blockTimeoutMs": 15000,
+    "chunkBytes": 16384,
+    "delayMs": 150
+  },
+  "summary": {
+    "fileCount": 3,
+    "classConnections": 0,
+    "classReceived": 0,
+    "classPairedMessages": 0,
+    "localConnections": 0,
+    "localPairedMessages": 0,
+    "classTransfers": 0,
+    "localTransfers": 0,
+    "classTimeouts": 0,
+    "preparationFailures": 4,
+    "kills": [],
+    "scenarios": [],
+    "runs": [
+      {
+        "runId": "2026-10-13T14-41-37-590Z-check-d103a480",
+        "scope": "preparation",
+        "role": "check",
+        "first": "2026-10-13T14:41:39.196Z",
+        "connections": 0,
+        "received": 0
+      },
+      {
+        "runId": "2026-10-13T14-40-32-616Z-install-8aec4301",
+        "scope": "preparation",
+        "role": "install",
+        "first": "2026-10-13T14:40:32.618Z",
+        "connections": 0,
+        "received": 0
+      },
+      {
+        "runId": "2026-10-13T14-41-41-759Z-validation-5c8b489e",
+        "scope": "preparation",
+        "role": "validation",
+        "first": "2026-10-13T14:41:41.761Z",
+        "connections": 0,
+        "received": 0
+      },
+      {
+        "runId": "2026-10-13T14-43-59-899Z-validation-78ceebba",
+        "scope": "preparation",
+        "role": "validation",
+        "first": "2026-10-13T14:43:59.901Z",
+        "connections": 0,
+        "received": 0
+      }
+    ],
+    "lastCheck": {
+      "node": "v24.18.1",
+      "syntaxPassed": true,
+      "filesChecked": 14,
+      "dependenciesReady": false,
+      "peerExchangeVerified": false,
+      "limitation": "Sintaxis e imports no verifican transporte, NAT, transferencia ni kill.",
+      "timestamp": "2026-10-13T14:41:39.200Z",
+      "runId": "2026-10-13T14-41-37-590Z-check-d103a480",
+      "scope": "preparation",
+      "role": "check",
+      "event": "checks_complete"
+    }
+  },
+  "files": [
+    {
+      "path": "evidence/2026-10-13T14-41-37-590Z-check-d103a480.jsonl",
+      "bytes": 1327,
+      "events": 4,
+      "scope": [
+        "preparation"
+      ],
+      "parseErrors": []
+    },
+    {
+      "path": "evidence/preparation.jsonl",
+      "bytes": 461,
+      "events": 1,
+      "scope": [
+        "preparation"
+      ],
+      "parseErrors": []
+    },
+    {
+      "path": "evidence/validation.jsonl",
+      "bytes": 1224,
+      "events": 4,
+      "scope": [
+        "preparation"
+      ],
+      "parseErrors": []
+    }
+  ]
+}

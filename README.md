@@ -1,53 +1,95 @@
-# Lab 16 — Pear, Hyperswarm y Hypercore
+# LAB #16 · 20230285 · PactTrail
 
-Sesión 19.
+Proyecto Node.js del fallback permitido: Hyperswarm para discovery y mensajes; Hypercore para archivos. Abre [index.html](index.html) para el informe y sus evidencias. No requiere API keys. El HTML es un artefacto local; no se ha publicado un sitio ni enviado mensajes al chat del curso.
 
-## Título y objetivo
+## 1. Preparación (Windows / PowerShell)
 
-Analizar descubrimiento e intercambio entre peers y el efecto de retirar la fuente inicial durante una transferencia.
+```powershell
+npm.cmd install --cache .npm-cache --no-audit --no-fund
+npm.cmd run check
+npm.cmd run sample
+npm.cmd test
+```
 
-## Instrucciones
+Node >=22. Se usa npm.cmd porque PowerShell puede bloquear npm.ps1. En Linux/macOS usa npm. `.npm-cache` está dentro del proyecto para funcionar con permisos restringidos. Si el entorno bloquea el registro npm, instala desde una terminal con acceso permitido; no cambies la política de ejecución ni el firewall automáticamente. No se incluye package-lock.json hasta lograr una instalación válida: npm lo creará para fijar versiones; consérvalo en tu entrega y luego usa npm ci.
 
-En este laboratorio trabajamos en Visual Studio Code para estudiar una arquitectura peer-to-peer del ecosistema Pear, Hyperswarm y Hypercore mediante un informe técnico y una simulación educativa independiente. Definimos un topic de demostración de treinta y dos bytes para explicar cómo dos peers se anuncian y buscan participantes mediante una DHT, sin atribuir una unión al topic real de clase cuando ese identificador no está disponible. Describimos la función de los nodos bootstrap, las condiciones de conectividad y el establecimiento de sockets entre participantes, y presentamos un intercambio de mensajes con delimitación explícita para evitar interpretar fragmentos de transporte como mensajes completos. Analizamos la creación de un Hypercore, su clave pública, la autenticación de bloques y la replicación de datos entre un escritor y sus lectores. Modelamos la transferencia de un archivo pequeño y desarrollamos el experimento kill-seeder, comparando la interrupción antes de completar la descarga con la presencia de una réplica íntegra en otro peer. Contrastamos centralización, disponibilidad y responsabilidad mediante los casos Napster, Grokster y BitTorrent, sin suponer que distribución técnica elimina obligaciones. Elaboramos P2P.md con arquitectura e infraestructura, señalamos la visibilidad de información de conexión y entregamos HTML, CSS, JavaScript y README con diagramas, terminal ilustrativa, resultados del modelo y conclusiones sobre descubrimiento, replicación y privacidad.
+La configuración está en [lab.config.json](lab.config.json): carnet `20230285`, topic **propuesto** `cs031-s19-20261013`. El hash SHA-256 da los 32 bytes. Acuerda ese texto con el compañero: inventar un topic distinto al del aula impide encontrar a sus peers. No contiene el carnet. No es contraseña ni control de acceso.
 
-## Descripción del trabajo
+## 2. Kickoff: dos laptops, mismo topic
 
-Dos diagramas explican infraestructura y estados del archivo. El terminal interactivo descubre peers, intercambia un saludo y transfiere cuatro bloques lógicos. Se puede desconectar el seeder y añadir una réplica completa; P2P.md desarrolla la arquitectura.
+Terminal tuya:
 
-## Tecnologías
+```powershell
+npm.cmd run chat -- --scope class --timeout 60000
+```
 
-Pear como entorno, Hyperswarm para descubrimiento y conexión, Hypercore para registro autenticado, DHT y nodos bootstrap. HTML, CSS y JavaScript realizan una simulación local.
+Terminal del compañero (el mismo proyecto):
 
-## Resultados
+```powershell
+npm.cmd run chat -- --scope class --carnet CARNET_DEL_COMPANERO --topic cs031-s19-20261013 --timeout 60000
+```
 
-La transferencia se detiene sin una fuente de bloques faltantes y continúa con una réplica íntegra. El modelo no se une al topic real de clase ni mide conexiones. La comparación histórica distingue arquitectura, disponibilidad y responsabilidad.
+Al conectar cada lado envía su ping, registra recepción y acusa recibo. Si quieres escribir más mensajes usa la terminal interactiva. `/quit` o Ctrl+C termina. El programa imprime las dos líneas solicitadas para que **tú** las pegues en el chat del lab. No las envía automáticamente.
 
-## Aprendizaje
+Los archivos `evidence/*.jsonl` registran timestamp UTC, runId, scope, public key truncada, payload y dirección remota observable del socket. `remote.host: null` significa que la API no expuso una dirección; no se inventa una IP. Un endpoint de loopback no prueba una IP pública, holepunch ni relay. El carnet del mensaje identifica al remitente declarado; la key autentica el transporte, no la identidad civil.
 
-Aprendimos a separar descubrimiento, transporte y replicación, y a interpretar la disponibilidad a partir de bloques concretos. El modelo kill-seeder nos permitió comprender por qué la resiliencia depende de copias útiles y peers activos, y por qué una aplicación sin servidor central todavía necesita infraestructura y reglas de responsabilidad.
+Pide al compañero **su log real** y cópialo a `evidence/companion/`. Ambos logs deben contener el mismo topicId y mensajes coincidentes por messageId. Si hay timeout, conserva el log y agrega en [evidence/NOTAS.md](evidence/NOTAS.md) red, versión, coordinación y pruebas autorizadas. No concluyas “UDP bloqueado” solamente porque no hubo peers. Hotspot solo si lo autoriza el instructor.
 
-## Visualización
+## 3. Archivo propio de 768 KiB
 
-Abrimos la carpeta WEB3-LABS en Visual Studio Code. Con la extensión Live Server instalada, hacemos clic derecho en este index.html y elegimos **Open with Live Server**. La navegación principal está en ../index.html. Usamos localhost para Web Crypto; no se necesitan cuentas ni credenciales. Los controles se operan con Tab, Enter y Espacio.
+`npm.cmd run sample` crea `samples/lab16.txt`: 786432 bytes (768 KiB), texto sintético original, sin PII ni contenido de terceros. El protocolo también rechaza archivos mayores que 1,000,000 bytes, límite conservador de 1 MB.
 
-## Rúbrica original
+Laptop A, seeder:
 
-- Unión al topic de clase mediante Hyperswarm: 20%.
-- Intercambio de mensajes P2P entre dos peers: 25%.
-- Transferencia de archivo y análisis kill-seeder: 20%.
-- P2P.md con arquitectura, infraestructura y responsabilidad: 25%.
-- Comentarios de aprendizaje: 10%.
+```powershell
+npm.cmd run seed -- --file samples/lab16.txt --scope class --timeout 300000
+```
 
-Total: 100%. Los alcances y límites se describen en la tabla HTML; no se asignan calificaciones por ejecuciones no realizadas.
+Copia el valor `CORE_KEY` mostrado en stderr o el campo `key` de `.runtime/handoff.json`. Es la **clave pública del core**, distinta de la key del peer y del topic del kickoff. No compartas el directorio `.runtime`, que contiene almacenamiento y claves de escritura.
 
-## Alcance académico
+Laptop B, downloader (reemplaza PUBLIC_KEY):
 
-Las simulaciones se identifican en pantalla; no representan conexiones, publicaciones ni transacciones externas. No se proporcionaron penalizaciones adicionales y no se inventan deducciones. participantes autorizados, archivo inocuo y distinción entre distribución técnica y anonimato.
+```powershell
+npm.cmd run download -- --key PUBLIC_KEY --scope class --delay 150 --block-timeout 15000 --timeout 120000
+```
 
-## Fuentes primarias
+Usan el discoveryKey del Hypercore como topic separado para el archivo. El bloque 0 es el manifest firmado; los siguientes son fragmentos de 16 KiB. Hypercore valida su estructura autenticada y el downloader comprueba tamaño y SHA-256 del archivo reconstruido. `transfer_complete` y `verified: true` son la evidencia de integridad. El output se guarda en `downloads/`, sin sobrescribir archivos existentes.
 
-- [Pear · documentación del ecosistema](https://docs.pears.com/)
-- [Hyperswarm · API oficial](https://github.com/holepunchto/hyperswarm)
-- [Hypercore · API oficial](https://github.com/holepunchto/hypercore)
-- [BitTorrent · BEP 3](https://www.bittorrent.org/beps/bep_0003.html)
-- [Grokster · resolución judicial histórica](https://cdn.ca9.uscourts.gov/datastore/opinions/2005/08/15/0355894o.pdf)
+La pausa está **entre solicitudes secuenciales**: deja tiempo para detener el seeder y evita solicitar todo el archivo de golpe. `block_downloaded` mide datos recibidos; `progress` mide datos consumidos. Si todo llegó antes del kill, terminar después no prueba que sobrevivió la red.
+
+## 4. Kill-seeder manual entre compañeros
+
+1. Empieza con un downloader nuevo (el programa crea storage único). Mantén solo el seeder A y el downloader B en ese discoveryKey.
+2. En B espera a `progress` cerca de 50%. En A detén **ese** proceso Node a la fuerza. En Windows: `Stop-Process -Id PID_DEL_SEEDER -Force`; en Unix: `kill -9 PID_DEL_SEEDER`. Obtén el PID de la terminal que iniciaste; no mates todos los procesos Node.
+3. Anota hora UTC del kill, PID, último bloque recibido y bytes pendientes. Guarda consola/log del seeder aunque no tenga cierre limpio. B debería registrar desconexión y timeout si nadie tiene los bloques faltantes; documenta lo que realmente ocurra.
+4. Contrasta con una tercera laptop C: primero descarga todo con `--stay --delay 0`; espera `replica_ready`. Luego inicia B de cero y mata A a mitad. C permanece sirviendo el core aunque no tiene private key para escribir. Comprueba `transfer_complete` y qué IP/peer sirvió los bloques después del kill.
+5. El número de conexiones no equivale al número de seeders completos. Un leecher solo ofrece bloques que tiene. Una DHT no aloja mágicamente tu archivo.
+
+No se ha ejecutado una transferencia con un compañero desde este entorno. No presentes los resultados esperados como observados.
+
+## 5. Experimento automático local (procesos reales)
+
+```powershell
+npm.cmd run experiment -- --scenario all
+```
+
+Arranca una DHT privada con bootstrap y nodo persistente en `127.0.0.1`, dos procesos de chat y tres escenarios: baseline sin kill, single sin otro seeder, replica con otro seeder completo. El controlador mata únicamente su proceso hijo al 50%, verifica que aún faltaban bytes de red y registra el resultado real. Scope `local-automated`: **no equivale al kickoff entre compañeros** ni prueba NAT/holepunch de Internet. Sin dependencias o UDP permitido esta prueba no se puede ejecutar.
+
+Para ejecutar uno: `--scenario chat`, `baseline`, `single` o `replica`. Logs separados por suite en `evidence/local-*/`. La alternativa de otra laptop se documenta en §4; el controlador automático no administra procesos ajenos.
+
+## 6. Informe y entrega
+
+```powershell
+npm.cmd run report
+npm.cmd run serve
+```
+
+Abre `http://127.0.0.1:8080` o directamente `index.html`. El reporte es HTML estático, sin dependencias, y también funciona mediante doble clic. `serve` es un visor local del informe, no transporta los mensajes/archivos P2P. Solo expone documentos, fuentes y evidence; bloquea `.runtime`, node_modules y traversal. No publica IPs a Internet.
+
+`report` escanea logs existentes, incluye previews y enlaces, calcula pares de mensajes coincidentes, marca local vs class y actualiza el bloque automático de P2P.md. Ejecuta otra vez después de recibir el log del compañero. `.runtime` y `downloads` no entran al reporte público. Los logs pueden revelar IPs y carnet: revisa con el compañero antes de publicar en el carnet; conserva originales privados si debes redactar una copia.
+
+Entrega: enlace **LAB #16 → index.html / P2P.md**, logs de ambos lados y nota del kill. [P2P.md](P2P.md), [KILL-SEEDER.md](KILL-SEEDER.md), [VENTURE.md](VENTURE.md), [REFLEXIONES.md](REFLEXIONES.md), [evidence/NOTAS.md](evidence/NOTAS.md). El memo y el journal usan PactTrail; la postura y el tally requieren tu revisión y los votos reales de clase.
+
+## Qué sí verifica este entorno
+
+`npm.cmd test` comprueba límites del protocolo, hash, muestras, paths, consistencia del reporte con logs y respuesta HTTP del visor, incluyendo bloqueo de claves y rutas privadas. `npm.cmd run check` valida sintaxis y captura disponibilidad de dependencias. Ni estas pruebas ni un intento fallido de npm certifican un intercambio P2P real. La preparación fallida se documenta en `evidence/preparation.jsonl`.
